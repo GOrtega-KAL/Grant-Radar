@@ -67,15 +67,11 @@
   .logo-area { display: flex; align-items: center; gap: 14px; }
 
   .logo-badge {
-    background: var(--accent);
-    color: #ffffff;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 1px;
-    padding: 5px 11px;
-    border-radius: 6px;
-    clip-path: none;
+    width: 40px;
+    height: 40px;
+    display: block;
+    object-fit: contain;
+    flex-shrink: 0;
   }
 
   .logo-text h1 {
@@ -293,19 +289,6 @@
     letter-spacing: -0.1px;
   }
 
-  /* Enlace en título de convocatoria */
-  .conv-title a {
-    color: var(--text);
-    text-decoration: none;
-    transition: color 0.15s;
-  }
-
-  .conv-title a:hover {
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-  }
-
   .match-score {
     flex-shrink: 0;
     display: flex;
@@ -351,11 +334,36 @@
 
   .meta-icon { font-size: 10px; }
 
+  .conv-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
   .conv-tags {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
-    margin-top: 8px;
+  }
+
+  .link-btn {
+    flex-shrink: 0;
+    border: 1px solid var(--border2);
+    background: #ffffff;
+    color: var(--accent);
+    font-family: var(--font);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .link-btn:hover {
+    background: rgba(0,113,227,0.08);
+    border-color: var(--accent);
   }
 
   .tag {
@@ -981,9 +989,9 @@
   <!-- TOP BAR -->
   <div class="topbar">
     <div class="logo-area">
-      <div class="logo-badge">VT–I+D</div>
+      <img src="grant-radar-logo.png" alt="Grant-Radar" class="logo-badge">
       <div class="logo-text">
-        <h1>Vigilancia tecnológica</h1>
+        <h1>Grant-Radar</h1>
         <p>Kalfrisa · Convocatorias de financiación I+D</p>
       </div>
     </div>
@@ -1184,6 +1192,18 @@
 
     <!-- Deadline block -->
     <div id="ov-deadline-block" style="margin-top:14px"></div>
+
+    <!-- Aviso URL genérica (solo si c.url_generica) -->
+    <div id="ov-url-generica-block" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.25);border-radius:10px;font-size:11px;color:var(--text2)">
+      ⚠ Página general del programa — la convocatoria específica puede requerir navegación adicional dentro de esta página.
+    </div>
+
+    <!-- Aviso URL no verificada / caída (solo si c.url_rota) -->
+    <div id="ov-url-rota-block" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(255,59,48,0.06);border:1px solid rgba(255,59,48,0.2);border-radius:10px;font-size:11px;color:var(--red)">
+      ⚠ Este enlace no respondió correctamente en la última comprobación automática. Verificar manualmente antes de actuar.
+    </div>
+
+    <div id="ov-link-row" style="margin-top:14px"></div>
 
     <div class="ai-section-title">Resumen ejecutivo</div>
     <div class="ai-text" id="ov-summary">—</div>
@@ -1430,9 +1450,7 @@
         <div class="conv-top">
           <div style="flex:1;min-width:0">
             <div class="conv-source">${c.source}</div>
-            <div class="conv-title">${c.url
-              ? `<a href="${c.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${c.title}</a>`
-              : c.title}</div>
+            <div class="conv-title">${c.title}</div>
           </div>
           <div class="match-score">
             <div class="match-pct ${c.priority}">${c.match}%</div>
@@ -1443,8 +1461,11 @@
           ${deadlineRow}
           <div class="meta-item" style="margin-top:4px"><span class="meta-icon">🏛</span> ${c.org}</div>
         </div>
-        <div class="conv-tags" style="margin-top:8px">
-          ${(c.tags||[]).filter(t => tagMap[t]).map(t => `<span class="tag ${t}">${tagMap[t]}</span>`).join('')}
+        <div class="conv-footer" style="margin-top:8px">
+          <div class="conv-tags">
+            ${(c.tags||[]).filter(t => tagMap[t]).map(t => `<span class="tag ${t}">${tagMap[t]}</span>`).join('')}
+          </div>
+          ${c.url ? `<button type="button" class="link-btn" onclick="event.stopPropagation(); window.open('${c.url}','_blank','noopener')">Enlace ↗</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -1656,6 +1677,15 @@
           </div>
         </div>
       </div>`;
+
+    // Avisos de calidad de URL
+    document.getElementById('ov-url-generica-block').style.display = c.url_generica ? 'block' : 'none';
+    document.getElementById('ov-url-rota-block').style.display     = c.url_rota ? 'block' : 'none';
+
+    // Botón de enlace dentro del overlay
+    document.getElementById('ov-link-row').innerHTML = c.url
+      ? `<button type="button" class="link-btn" onclick="window.open('${c.url}','_blank','noopener')">Abrir convocatoria ↗</button>`
+      : '';
 
     // Radar SVG
     const svgEl = document.getElementById('ov-radar');

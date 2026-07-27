@@ -1518,20 +1518,27 @@
   // ── RENDER SOURCES ───────────────────────────────────────────────────────────
   function renderSources() {
     const el = document.getElementById('source-list');
-    el.innerHTML = sources.map(s => `
+    el.innerHTML = sources.map(s => {
+      const cerradas = s.count_cerradas || 0;
+      const nota = cerradas > 0
+        ? `<div class="source-type" style="color:var(--orange)">${cerradas} encontrada${cerradas>1?'s':''} con plazo ya cerrado</div>`
+        : '';
+      return `
       <div class="source-item">
         <div class="source-left">
           <div class="source-status ${s.status}"></div>
           <div>
             <div class="source-name">${s.name}</div>
             <div class="source-type">${s.type}</div>
+            ${nota}
           </div>
         </div>
         <div class="source-right">
           <div class="source-count">${s.count}</div>
           <div class="source-time">${s.time}</div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   // ── RENDER CHART ─────────────────────────────────────────────────────────────

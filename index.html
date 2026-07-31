@@ -128,7 +128,7 @@
   /* STAT CARDS */
   .stats-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 12px;
     margin-bottom: 16px;
   }
@@ -396,6 +396,84 @@
 
   .llm-summary strong { color: var(--teal); font-weight: 600; }
 
+  .analysis-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+  }
+
+  .analysis-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    font-family: var(--font-mono);
+    font-size: 9px;
+  }
+
+  .analysis-badge.review {
+    color: var(--orange);
+    border-color: rgba(255,149,0,0.3);
+    background: rgba(255,149,0,0.08);
+  }
+
+  .analysis-badge.ineligible {
+    color: var(--red);
+    border-color: rgba(255,59,48,0.25);
+    background: rgba(255,59,48,0.06);
+  }
+
+  .review-list { padding: 10px; }
+  .review-item {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 7px;
+    cursor: pointer;
+    background: var(--bg2);
+  }
+  .review-item:hover { border-color: var(--orange); }
+  .review-title { font-size: 11px; color: var(--text); line-height: 1.4; }
+  .review-reasons { font-size: 9px; color: var(--text3); margin-top: 4px; }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .detail-metric {
+    padding: 9px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+  }
+  .detail-metric-label {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .detail-metric-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    margin-top: 3px;
+  }
+
+  .detail-list {
+    margin: 0;
+    padding-left: 18px;
+    color: var(--text2);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
   .ai-badge {
     display: inline-flex;
     align-items: center;
@@ -619,6 +697,8 @@
     border-radius: 18px;
     max-width: 600px;
     width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
     padding: 28px;
     position: relative;
     box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
@@ -961,6 +1041,10 @@
   }
 
   /* ── RESPONSIVE ─────────────────────────────────────── */
+  @media (max-width: 1150px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+  }
+
   @media (max-width: 900px) {
     .stats-row { grid-template-columns: repeat(2, 1fr); }
     .main-grid { grid-template-columns: 1fr; }
@@ -1014,7 +1098,7 @@
     <div class="stat-card fade-in" style="--card-color: var(--accent); --card-fill: 0.7">
       <div class="stat-label">Alta compatibilidad</div>
       <div class="stat-value" id="cnt-high">0</div>
-      <div class="stat-sub">Encaje ≥ 80%</div>
+      <div class="stat-sub">Prioridad determinista alta</div>
     </div>
     <div class="stat-card fade-in" style="--card-color: var(--red); --card-fill: 0.4">
       <div class="stat-label">Cierre &lt; 30 días</div>
@@ -1026,6 +1110,11 @@
       <div class="stat-value" id="cnt-discarded">0</div>
       <div class="stat-sub">Fuera de scope Kalfrisa</div>
     </div>
+    <div class="stat-card fade-in" style="--card-color: var(--orange); --card-fill: 0.5">
+      <div class="stat-label">Revisión manual</div>
+      <div class="stat-value" id="cnt-review">0</div>
+      <div class="stat-sub">Datos o decisión por confirmar</div>
+    </div>
   </div>
 
   <!-- MAIN GRID -->
@@ -1036,7 +1125,7 @@
       <div class="panel-header">
         <span class="panel-title">Convocatorias detectadas</span>
         <div style="display:flex;gap:8px;align-items:center">
-          <span class="panel-tag">IA match</span>
+          <span class="panel-tag">Análisis estructurado</span>
           <span class="panel-tag" id="filter-count-tag">Todas</span>
         </div>
       </div>
@@ -1065,6 +1154,8 @@
           <span class="filter-label">Ordenar por</span>
           <button class="filter-chip sort-chip active" onclick="setSort('match','desc',this)" title="Más compatibles primero">Compatibilidad ↓</button>
           <button class="filter-chip sort-chip" onclick="setSort('match','asc',this)" title="Menos compatibles primero">Compatibilidad ↑</button>
+          <button class="filter-chip sort-chip" onclick="setSort('actionability_score','desc',this)" title="Mayor capacidad de actuar primero">Accionabilidad ↓</button>
+          <button class="filter-chip sort-chip" onclick="setSort('confidence','asc',this)" title="Menor confianza primero">Confianza ↑</button>
           <button class="filter-chip sort-chip" onclick="setSort('deadline','asc',this)" title="Más urgentes primero">Tiempo restante ↑</button>
           <button class="filter-chip sort-chip" onclick="setSort('deadline','desc',this)" title="Más lejanas primero">Tiempo restante ↓</button>
         </div>
@@ -1073,6 +1164,11 @@
             <input type="checkbox" id="toggle-descartadas" onchange="renderConvs()">
             <span class="toggle-track"><span class="toggle-thumb"></span></span>
             <span class="filter-label" style="margin:0">Ver descartadas</span>
+          </label>
+          <label class="toggle-label">
+            <input type="checkbox" id="toggle-review" onchange="renderConvs()">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="filter-label" style="margin:0">Solo revisión</span>
           </label>
           <button class="csv-btn" onclick="exportCSV()" title="Descargar vista actual en CSV">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="display:block;flex-shrink:0"><path d="M6.5 1v7M3.5 5.5L6.5 8.5 9.5 5.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M1.5 10.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
@@ -1092,12 +1188,19 @@
           <span class="panel-title">Análisis IA</span>
           <div class="ai-badge"><div class="ai-dot"></div>Claude</div>
         </div>
-        <div class="llm-summary">
+        <div class="llm-summary" id="executive-summary">
           <div class="ai-badge" style="margin-bottom:10px"><div class="ai-dot"></div>Resumen ejecutivo · hoy</div>
-          <p>Se detectan <strong>3 convocatorias de alta prioridad</strong> con encaje ≥ 80% para el perfil de Kalfrisa. La convocatoria <strong>Horizon Europe — Clean Hydrogen</strong> representa la mayor oportunidad presupuestaria (€6M) y coincide directamente con la hoja de ruta de hidrógeno como combustible industrial.</p>
-          <p style="margin-top:10px">La <strong>convocatoria IDAE eficiencia térmica industrial</strong> cierra en 18 días. Requiere acción inmediata.</p>
-          <p style="margin-top:10px">Recomendación: priorizar preparación de memoria técnica para IDAE y apertura de consorcio para Horizon Europe Q2 2025.</p>
+          <p>Calculando resumen a partir del JSON publicado…</p>
         </div>
+      </div>
+
+      <!-- MANUAL REVIEW QUEUE -->
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title">Cola de revisión</span>
+          <span class="panel-tag" id="review-count-tag">0 pendientes</span>
+        </div>
+        <div class="review-list" id="review-list"></div>
       </div>
 
       <!-- URGENCY DEADLINES -->
@@ -1178,6 +1281,22 @@
     <!-- Meta row: org, TRL, consorcio -->
     <div id="ov-meta-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
 
+    <div class="detail-grid">
+      <div class="detail-metric">
+        <div class="detail-metric-label">Accionabilidad</div>
+        <div class="detail-metric-value" id="ov-actionability">—</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-metric-label">Confianza</div>
+        <div class="detail-metric-value" id="ov-confidence">—</div>
+      </div>
+      <div class="detail-metric">
+        <div class="detail-metric-label">Elegibilidad</div>
+        <div class="detail-metric-value" id="ov-eligibility">—</div>
+      </div>
+    </div>
+    <div id="ov-review-block" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.25);border-radius:10px;font-size:11px;color:var(--text2)"></div>
+
     <!-- Radar + score + dims -->
     <div class="score-ring">
       <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px">
@@ -1185,7 +1304,7 @@
         <div style="display:flex;align-items:baseline;gap:3px">
           <div class="ring-score" id="ov-score">—</div>
         </div>
-        <div class="ring-label">Match score</div>
+        <div class="ring-label">Encaje</div>
       </div>
       <div class="ring-dims" id="ov-dims"></div>
     </div>
@@ -1214,6 +1333,21 @@
     <div class="ai-section-title">Acción recomendada</div>
     <div class="ai-text" id="ov-action">—</div>
 
+    <div class="ai-section-title">Evidencias positivas</div>
+    <div id="ov-evidence">—</div>
+
+    <div class="ai-section-title">Riesgos e incógnitas</div>
+    <div id="ov-risks">—</div>
+
+    <div class="ai-section-title">Socios técnicos recomendados</div>
+    <div id="ov-partners">—</div>
+
+    <div class="ai-section-title">Hechos extraídos</div>
+    <div id="ov-facts">—</div>
+
+    <div class="ai-section-title">Trazabilidad de fuente</div>
+    <div id="ov-trace">—</div>
+
     <!-- Descarte motivo (only shown if descartada) -->
     <div id="ov-descarte-block" style="display:none;margin-top:16px;padding:12px 14px;background:rgba(255,59,48,0.06);border:1px solid rgba(255,59,48,0.2);border-radius:10px">
       <div style="font-size:10px;font-weight:600;color:var(--red);letter-spacing:0.5px;margin-bottom:4px">Motivo de descarte</div>
@@ -1227,6 +1361,8 @@
   let convocatorias = [];
   let keywords      = [];
   let sources       = [];
+  let reviewQueue   = [];
+  let dashboardMeta = {};
   const trendData   = [4,6,3,8,5,7,9,6,11,8,7,12];
   const trendLabels = ['Oct','Oct','Nov','Nov','Dic','Dic','Ene','Ene','Feb','Feb','Mar','Hoy'];
 
@@ -1234,6 +1370,101 @@
     h2: 'Hidrógeno', ee: 'Efic. Energ.',
     desc: 'Descarbonización', emis: 'Emisiones', horn: 'Hornos'
   };
+  const techTagMap = {
+    waste_heat: 'Calor residual',
+    industrial_electrification: 'Electrificación industrial',
+    hydrogen_combustion: 'Combustión H₂',
+    emissions: 'Emisiones / RTO',
+    thermal_processes: 'Procesos térmicos',
+    digital_thermal: 'Digitalización térmica',
+    thermal_waste: 'Valorización térmica',
+    energy_efficiency: 'Eficiencia energética'
+  };
+  const eligibilityMap = {
+    eligible: 'Elegible',
+    ineligible: 'No elegible',
+    unknown: 'Por confirmar'
+  };
+  const roleMap = {
+    leader: 'Líder',
+    technology_partner: 'Socio tecnológico',
+    industrial_demonstrator: 'Demostrador industrial',
+    consortium_partner: 'Socio de consorcio',
+    not_applicable: 'No aplicable',
+    unknown: 'Por determinar'
+  };
+  const decisionMap = {
+    pursue: 'Preparar candidatura',
+    watch: 'Monitorizar',
+    manual_review: 'Revisión manual',
+    discard_out_of_scope: 'Descartar: fuera de alcance',
+    discard_ineligible: 'Descartar: no elegible'
+  };
+  const reviewReasonMap = {
+    high_fit_low_confidence: 'encaje alto con confianza baja',
+    eligibility_unknown: 'elegibilidad sin confirmar',
+    deadline_under_15_days: 'plazo inferior a 15 días',
+    budget_missing: 'presupuesto no localizado',
+    consortium_requirement_missing: 'requisito de consorcio desconocido',
+    model_requests_manual_review: 'Claude solicita revisión',
+    strategic_high_fit: 'oportunidad estratégica',
+    rule_model_discrepancy: 'discrepancia entre reglas y modelo',
+    analysis_pending: 'análisis pendiente'
+  };
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+    })[char]);
+  }
+
+  function safeExternalUrl(value) {
+    try {
+      const parsed = new URL(String(value || ''), window.location.href);
+      return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+    } catch { return ''; }
+  }
+
+  function openConvUrl(id) {
+    const c = convocatorias.find(item => item.id === id);
+    const url = safeExternalUrl(c?.url);
+    if (url) window.open(url, '_blank', 'noopener');
+  }
+
+  function normalizeConv(raw) {
+    const match = Number.isFinite(Number(raw.fit_score))
+      ? Number(raw.fit_score)
+      : Number(raw.match ?? 0);
+    const actionability = Number.isFinite(Number(raw.actionability_score))
+      ? Number(raw.actionability_score)
+      : match;
+    const confidence = raw.confidence === null || raw.confidence === undefined
+      ? null : Number(raw.confidence);
+    return {
+      ...raw,
+      id: raw.id,
+      deadline: Number(raw.deadline ?? 0),
+      match,
+      fit_score: match,
+      actionability_score: actionability,
+      confidence: Number.isFinite(confidence) ? confidence : null,
+      eligibility: raw.eligibility || 'unknown',
+      eligibility_reason: raw.eligibility_reason || '',
+      recommended_role: raw.recommended_role || 'unknown',
+      decision: raw.decision || (raw.descartada ? 'discard_out_of_scope' : 'watch'),
+      evidence_quality: raw.evidence_quality || 'low',
+      positive_evidence: Array.isArray(raw.positive_evidence) ? raw.positive_evidence : [],
+      risks_and_unknowns: Array.isArray(raw.risks_and_unknowns) ? raw.risks_and_unknowns : [],
+      partner_needs: Array.isArray(raw.partner_needs) ? raw.partner_needs : [],
+      recommended_partners: Array.isArray(raw.recommended_partners) ? raw.recommended_partners : [],
+      review_required: Boolean(raw.review_required),
+      review_reasons: Array.isArray(raw.review_reasons) ? raw.review_reasons : [],
+      call_facts: raw.call_facts && typeof raw.call_facts === 'object' ? raw.call_facts : {},
+      tech_tags: Array.isArray(raw.tech_tags) ? raw.tech_tags : [],
+      tags: Array.isArray(raw.tags) ? raw.tags : [],
+      dims: Array.isArray(raw.dims) ? raw.dims : []
+    };
+  }
 
   // ── FILTER + SORT STATE ───────────────────────────────────────────────────────
   const filterState = { source: 'all', tag: 'all' };
@@ -1256,10 +1487,12 @@
 
   function getFiltered() {
     const showDesc = document.getElementById('toggle-descartadas')?.checked;
+    const onlyReview = document.getElementById('toggle-review')?.checked;
     let list = convocatorias.filter(c => {
       // Nunca mostrar convocatorias con plazo cerrado (deadline<=0)
       if ((c.deadline ?? 1) <= 0) return false;
       if (c.descartada && !showDesc) return false;
+      if (onlyReview && !c.review_required) return false;
       if (filterState.source !== 'all' && c.source !== filterState.source) return false;
       if (filterState.tag    !== 'all' && !(c.tags||[]).includes(filterState.tag)) return false;
       return true;
@@ -1267,8 +1500,8 @@
 
     // Sort
     list = [...list].sort((a, b) => {
-      const aVal = sortState.key === 'match' ? a.match : a.deadline;
-      const bVal = sortState.key === 'match' ? b.match : b.deadline;
+      const aVal = Number(a[sortState.key] ?? 0);
+      const bVal = Number(b[sortState.key] ?? 0);
       return sortState.dir === 'desc' ? bVal - aVal : aVal - bVal;
     });
 
@@ -1279,7 +1512,15 @@
   function exportCSV() {
     const list = getFiltered();
     const tagLabels = { h2:'Hidrógeno', ee:'Efic. energ.', desc:'Descarbonización', emis:'Emisiones', horn:'Hornos' };
-    const headers = ['ID','Fuente','Título','Organismo','Match %','Prioridad','Días restantes','Apertura','Cierre','TRL mín','TRL máx','Socios consorcio','Temáticas','Descartada','URL'];
+    const headers = [
+      'ID','Fuente','Título','Organismo','Encaje %','Accionabilidad %',
+      'Confianza %','Prioridad','Elegibilidad','Decisión','Rol recomendado',
+      'Días restantes','Apertura','Cierre','TRL mín','TRL máx',
+      'Socios recomendados','Necesidades de socio','Temáticas',
+      'Taxonomía tecnológica','Calidad de evidencia','Evidencias positivas',
+      'Riesgos e incógnitas','Revisión manual','Motivos de revisión',
+      'Descartada','URL'
+    ];
 
     const esc = v => {
       const s = String(v ?? '').replace(/"/g, '""');
@@ -1291,15 +1532,27 @@
       c.source,
       c.title,
       c.org,
-      c.match,
+      c.fit_score,
+      c.actionability_score,
+      c.confidence ?? '',
       c.priority === 'high' ? 'Alta' : c.priority === 'medium' ? 'Media' : 'Baja',
+      eligibilityMap[c.eligibility] || c.eligibility,
+      c.decision,
+      roleMap[c.recommended_role] || c.recommended_role,
       c.deadline,
       c.open_date     || '',
       c.deadline_date || '',
       c.trl_min ?? '',
       c.trl_max ?? '',
-      c.socio_consorcio || '',
+      (c.recommended_partners||[]).map(p => p.name).join(' | ') || c.socio_consorcio || '',
+      (c.partner_needs||[]).join(' | '),
       (c.tags||[]).map(t => tagLabels[t]||t).join(' | '),
+      (c.tech_tags||[]).map(t => techTagMap[t]||t).join(' | '),
+      c.evidence_quality || '',
+      (c.positive_evidence||[]).join(' | '),
+      (c.risks_and_unknowns||[]).join(' | '),
+      c.review_required ? 'Sí' : 'No',
+      (c.review_reasons||[]).map(r => reviewReasonMap[r]||r).join(' | '),
       c.descartada ? 'Sí' : 'No',
       c.url || ''
     ].map(esc).join(','));
@@ -1334,6 +1587,13 @@
     } catch { return null; }
   }
 
+  function renderListHtml(items, emptyText='No consta en la fuente.') {
+    if (!Array.isArray(items) || !items.length) {
+      return `<div class="ai-text">${escapeHtml(emptyText)}</div>`;
+    }
+    return `<ul class="detail-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+  }
+
   function isFuture(deadline) { return deadline > 180; }
 
   // ── LOAD DATA ────────────────────────────────────────────────────────────────
@@ -1343,15 +1603,21 @@
       if (!resp.ok) throw new Error('JSON no disponible');
       const data = await resp.json();
 
-      convocatorias = data.convocatorias || [];
+      convocatorias = (data.convocatorias || []).map(normalizeConv);
       keywords      = data.keywords     || [];
+      reviewQueue   = data.review_queue || [];
+      dashboardMeta = {
+        schema_version: data.schema_version || 1,
+        versions: data.versions || {},
+        stats: data.stats || {}
+      };
       sources       = (data.sources || []).map(s => ({
         ...s,
-        time: `actualizado ${new Date(data.last_updated).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`
+        time: `actualizado ${new Date(data.generated_at || data.last_updated).toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`
       }));
 
-      if (data.last_updated) {
-        const dt = new Date(data.last_updated);
+      if (data.generated_at || data.last_updated) {
+        const dt = new Date(data.generated_at || data.last_updated);
         document.getElementById('ts').textContent =
           dt.toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) +
           ' · ' + dt.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
@@ -1372,6 +1638,9 @@
       {id:4,source:'BOA ARAGÓN',title:'Subvenciones Descarbonización Industrial Aragón',match:55,priority:'medium',descartada:false,motivo_descarte:'',trl_min:5,trl_max:8,socio_consorcio:'N/A',deadline:62,deadline_date:'',budget:'Ver convocatoria',budget_raw:0,tags:['desc','emis'],org:'Gobierno de Aragón',summary:'Línea autonómica de descarbonización.',dims:[{name:'Alineación tecnológica',val:72},{name:'Capacidad de consorcio',val:85},{name:'Encaje TRL',val:80},{name:'Oportunidad estratégica',val:70}],action:'Monitorizar.',url:'https://www.boa.aragon.es',keywords_found:['descarbonización']},
       {id:5,source:'IDAE',title:'Programa ferroviario FNEE — Transporte',match:5,priority:'low',descartada:true,motivo_descarte:'Transporte ferroviario excluido. Kalfrisa se especializa en procesos térmicos industriales, no en movilidad.',trl_min:1,trl_max:9,socio_consorcio:'N/A',deadline:30,deadline_date:'',budget:'Ver convocatoria',budget_raw:0,tags:[],org:'Instituto para la Diversificación y Ahorro de la Energía',summary:'Convocatoria FNEE enfocada en eficiencia energética ferroviaria.',dims:[{name:'Alineación tecnológica',val:0},{name:'Capacidad de consorcio',val:0},{name:'Encaje TRL',val:0},{name:'Oportunidad estratégica',val:0}],action:'Descartar definitivamente.',url:'https://www.idae.es',keywords_found:[]},
     ];
+    convocatorias = convocatorias.map(normalizeConv);
+    reviewQueue = [];
+    dashboardMeta = { schema_version: 1, versions: {}, stats: {} };
     keywords = [
       {name:'energy efficiency',count:17,color:'var(--accent)'},
       {name:'eficiencia energética',count:14,color:'var(--accent)'},
@@ -1391,11 +1660,49 @@
   // ── RENDER ALL ───────────────────────────────────────────────────────────────
   function renderAll() {
     renderConvs();
+    renderExecutiveSummary();
+    renderReviewQueue();
     renderDeadlines();
     renderKeywords();
     renderSources();
     renderChart();
     animateCounters();
+  }
+
+  function renderExecutiveSummary() {
+    const el = document.getElementById('executive-summary');
+    const active = convocatorias.filter(c => !c.descartada && (c.deadline ?? 1) > 0);
+    const high = active.filter(c => c.priority === 'high');
+    const urgent = active.filter(c => c.deadline < 30).sort((a,b) => a.deadline-b.deadline);
+    const review = active.filter(c => c.review_required);
+    const top = [...active].sort((a,b) =>
+      (b.actionability_score - a.actionability_score) || (b.fit_score - a.fit_score)
+    )[0];
+    const version = dashboardMeta.versions?.analysis;
+
+    el.innerHTML = `
+      <div class="ai-badge" style="margin-bottom:10px"><div class="ai-dot"></div>Resumen calculado · ${escapeHtml(version || 'formato heredado')}</div>
+      <p>Hay <strong>${high.length} oportunidades de prioridad alta</strong> y ${review.length} que requieren revisión manual.</p>
+      ${top ? `<p style="margin-top:10px">La primera oportunidad por accionabilidad es <strong>${escapeHtml(top.title)}</strong> (${top.actionability_score}% accionabilidad; ${top.fit_score}% encaje).</p>` : ''}
+      ${urgent.length ? `<p style="margin-top:10px">Cierre más próximo: <strong>${escapeHtml(urgent[0].title)}</strong>, dentro de ${urgent[0].deadline} días.</p>` : '<p style="margin-top:10px">No hay cierres confirmados en menos de 30 días.</p>'}
+      <p style="margin-top:10px">Las prioridades proceden de reglas deterministas; Claude aporta extracción factual y evaluación.</p>`;
+  }
+
+  function renderReviewQueue() {
+    const el = document.getElementById('review-list');
+    const items = convocatorias
+      .filter(c => c.review_required && (c.deadline ?? 1) > 0)
+      .sort((a,b) => a.deadline - b.deadline);
+    document.getElementById('review-count-tag').textContent = `${items.length} pendiente${items.length === 1 ? '' : 's'}`;
+    if (!items.length) {
+      el.innerHTML = '<div class="no-results" style="padding:16px">Sin revisiones pendientes.</div>';
+      return;
+    }
+    el.innerHTML = items.slice(0, 8).map(c => `
+      <div class="review-item" onclick="openOverlay(${Number(c.id)})">
+        <div class="review-title">${escapeHtml(c.title)}</div>
+        <div class="review-reasons">${escapeHtml((c.review_reasons||[]).map(r => reviewReasonMap[r]||r).join(' · '))}</div>
+      </div>`).join('');
   }
 
   // ── RENDER CONVOCATORIAS ─────────────────────────────────────────────────────
@@ -1404,8 +1711,10 @@
     const list = getFiltered();
     // Total base: non-closed, non-discarded (unless toggle on)
     const showDesc = document.getElementById('toggle-descartadas')?.checked;
+    const onlyReview = document.getElementById('toggle-review')?.checked;
     const totalBase = convocatorias.filter(c =>
       (c.deadline ?? 1) > 0 && (showDesc || !c.descartada)
+      && (!onlyReview || c.review_required)
     ).length;
     const badge = document.getElementById('filter-count-tag');
     if (badge) badge.textContent = list.length === totalBase ? 'Todas' : `${list.length} / ${totalBase}`;
@@ -1428,6 +1737,13 @@
         : '';
       const descartadaBadge = c.descartada
         ? `<div class="descarte-badge">✕ Descartada</div>` : '';
+      const analysisBadges = `
+        <div class="analysis-badges">
+          <span class="analysis-badge">Acción ${c.actionability_score}%</span>
+          <span class="analysis-badge">Confianza ${c.confidence ?? 'N/D'}${c.confidence == null ? '' : '%'}</span>
+          <span class="analysis-badge ${c.eligibility === 'ineligible' ? 'ineligible' : ''}">${escapeHtml(eligibilityMap[c.eligibility] || c.eligibility)}</span>
+          ${c.review_required ? '<span class="analysis-badge review">Revisión</span>' : ''}
+        </div>`;
 
       const deadlineRow = `
         <div style="display:flex;align-items:center;justify-content:space-between;margin-top:2px">
@@ -1445,27 +1761,28 @@
         </div>`;
 
       return `
-      <div class="conv-item ${c.priority}${c.descartada ? ' descartada' : ''}" onclick="openOverlay(${c.id})">
+      <div class="conv-item ${c.priority}${c.descartada ? ' descartada' : ''}" onclick="openOverlay(${Number(c.id)})">
         ${descartadaBadge}
         <div class="conv-top">
           <div style="flex:1;min-width:0">
-            <div class="conv-source">${c.source}</div>
-            <div class="conv-title">${c.title}</div>
+            <div class="conv-source">${escapeHtml(c.source)}</div>
+            <div class="conv-title">${escapeHtml(c.title)}</div>
+            ${analysisBadges}
           </div>
           <div class="match-score">
             <div class="match-pct ${c.priority}">${c.match}%</div>
-            <div class="match-label">Match</div>
+            <div class="match-label">Encaje</div>
           </div>
         </div>
         <div class="conv-meta">
           ${deadlineRow}
-          <div class="meta-item" style="margin-top:4px"><span class="meta-icon">🏛</span> ${c.org}</div>
+          <div class="meta-item" style="margin-top:4px"><span class="meta-icon">🏛</span> ${escapeHtml(c.org)}</div>
         </div>
         <div class="conv-footer" style="margin-top:8px">
           <div class="conv-tags">
             ${(c.tags||[]).filter(t => tagMap[t]).map(t => `<span class="tag ${t}">${tagMap[t]}</span>`).join('')}
           </div>
-          ${c.url ? `<button type="button" class="link-btn" onclick="event.stopPropagation(); window.open('${c.url}','_blank','noopener')">Enlace ↗</button>` : ''}
+          ${safeExternalUrl(c.url) ? `<button type="button" class="link-btn" onclick="event.stopPropagation(); openConvUrl(${Number(c.id)})">Enlace ↗</button>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -1490,21 +1807,21 @@
         <div class="deadline-item">
           <div class="deadline-days ${cls}">${c.deadline}<span>días</span></div>
           <div class="deadline-info">
-            <div class="deadline-name">${c.title.length > 45 ? c.title.slice(0,45)+'…' : c.title}</div>
-            <div class="deadline-org">${c.source}${dLabel ? ' · ' + dLabel : ''}</div>
+            <div class="deadline-name">${escapeHtml(c.title.length > 45 ? c.title.slice(0,45)+'…' : c.title)}</div>
+            <div class="deadline-org">${escapeHtml(c.source)}${dLabel ? ' · ' + escapeHtml(dLabel) : ''}</div>
           </div>
-          <div class="deadline-budget">${c.budget !== 'Ver convocatoria' ? c.budget : '—'}</div>
+          <div class="deadline-budget">${c.budget && c.budget !== 'Ver convocatoria' ? escapeHtml(c.budget) : '—'}</div>
         </div>`;
     }).join('');
   }
 
   // ── RENDER KEYWORDS ──────────────────────────────────────────────────────────
   function renderKeywords() {
-    const max = Math.max(...keywords.map(k => k.count));
+    const max = Math.max(1, ...keywords.map(k => k.count));
     const el = document.getElementById('kw-list');
     el.innerHTML = keywords.map(k => `
       <div class="keyword-item">
-        <div class="kw-name">${k.name}</div>
+        <div class="kw-name">${escapeHtml(k.name)}</div>
         <div class="kw-bar-wrap">
           <div class="kw-bar" style="--bar-color:${k.color};width:0%" data-width="${(k.count/max*100).toFixed(0)}%"></div>
         </div>
@@ -1528,14 +1845,14 @@
         <div class="source-left">
           <div class="source-status ${s.status}"></div>
           <div>
-            <div class="source-name">${s.name}</div>
-            <div class="source-type">${s.type}</div>
+            <div class="source-name">${escapeHtml(s.name)}</div>
+            <div class="source-type">${escapeHtml(s.type)}</div>
             ${nota}
           </div>
         </div>
         <div class="source-right">
           <div class="source-count">${s.count}</div>
-          <div class="source-time">${s.time}</div>
+          <div class="source-time">${escapeHtml(s.time)}</div>
         </div>
       </div>`;
     }).join('');
@@ -1556,13 +1873,15 @@
   function animateCounters() {
     const nonClosed  = convocatorias.filter(c => (c.deadline ?? 1) > 0);
     const active     = nonClosed.filter(c => !c.descartada).length;
-    const high       = nonClosed.filter(c => !c.descartada && c.match >= 80).length;
+    const high       = nonClosed.filter(c => !c.descartada && c.priority === 'high').length;
     const urgent     = nonClosed.filter(c => !c.descartada && c.deadline < 30).length;
     const discarded  = nonClosed.filter(c => c.descartada).length;
+    const review     = nonClosed.filter(c => c.review_required).length;
     animNum('cnt-active',    active,   800);
     animNum('cnt-high',      high,     800);
     animNum('cnt-urgent',    urgent,   800);
     animNum('cnt-discarded', discarded,800);
+    animNum('cnt-review',    review,   800);
   }
 
   function animNum(id, target, dur, decimal=false) {
@@ -1609,11 +1928,11 @@
     // Axis labels
     dims.forEach((d,i) => {
       const [x,y] = pt(i, 1.22);
-      const words = d.name.split(' ');
+      const words = String(d.name || '').split(' ');
       const lines = words.length <= 2 ? [words.join(' ')] : [words.slice(0,2).join(' '), words.slice(2).join(' ')];
       const dyStart = lines.length > 1 ? -6 : 0;
       html += `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="7.5" fill="var(--text3)" font-family="-apple-system,sans-serif">
-        ${lines.map((l,li) => `<tspan x="${x}" dy="${li===0?dyStart:12}">${l}</tspan>`).join('')}
+        ${lines.map((l,li) => `<tspan x="${x}" dy="${li===0?dyStart:12}">${escapeHtml(l)}</tspan>`).join('')}
       </text>`;
     });
     // Data fill
@@ -1641,6 +1960,11 @@
     const radarColor = c.priority === 'high' ? '#34c759' : c.priority === 'medium' ? '#ff9500' : '#8e8e93';
     document.getElementById('ov-score').textContent = c.match + '%';
     document.getElementById('ov-score').style.color = scoreColor;
+    document.getElementById('ov-actionability').textContent = `${c.actionability_score}%`;
+    document.getElementById('ov-confidence').textContent =
+      c.confidence == null ? 'N/D' : `${c.confidence}%`;
+    document.getElementById('ov-eligibility').textContent =
+      eligibilityMap[c.eligibility] || c.eligibility;
 
     // Meta pills
     const metaEl = document.getElementById('ov-meta-row');
@@ -1648,10 +1972,25 @@
       ? `TRL ${c.trl_min||'?'}–${c.trl_max||'?'}` : null;
     const consortium = c.socio_consorcio && c.socio_consorcio !== 'N/A' ? c.socio_consorcio : null;
     metaEl.innerHTML = [
-      `<span class="meta-pill">🏛 <strong>${c.org}</strong></span>`,
-      trlStr ? `<span class="meta-pill">🔬 ${trlStr}</span>` : '',
-      consortium ? `<span class="meta-pill">🤝 ${consortium}</span>` : '',
+      `<span class="meta-pill">🏛 <strong>${escapeHtml(c.org)}</strong></span>`,
+      trlStr ? `<span class="meta-pill">🔬 ${escapeHtml(trlStr)}</span>` : '',
+      consortium ? `<span class="meta-pill">🤝 ${escapeHtml(consortium)}</span>` : '',
+      `<span class="meta-pill">Rol: ${escapeHtml(roleMap[c.recommended_role] || c.recommended_role)}</span>`,
+      `<span class="meta-pill">Decisión: ${escapeHtml(decisionMap[c.decision] || c.decision)}</span>`,
+      `<span class="meta-pill">Evidencia: ${escapeHtml(c.evidence_quality)}</span>`,
     ].join('');
+
+    const reviewBlock = document.getElementById('ov-review-block');
+    const reviewLabels = (c.review_reasons||[]).map(reason => reviewReasonMap[reason] || reason);
+    if (c.review_required || c.eligibility_reason) {
+      reviewBlock.style.display = 'block';
+      reviewBlock.innerHTML =
+        `${c.review_required ? `<strong>Revisión requerida:</strong> ${escapeHtml(reviewLabels.join(' · ') || 'revisión manual')}` : ''}` +
+        `${c.eligibility_reason ? `<div style="margin-top:4px"><strong>Elegibilidad:</strong> ${escapeHtml(c.eligibility_reason)}</div>` : ''}`;
+    } else {
+      reviewBlock.style.display = 'none';
+      reviewBlock.textContent = '';
+    }
 
     const dColor = deadlineColor(c.deadline);
     const dPct   = deadlineBarPct(c.deadline);
@@ -1690,8 +2029,8 @@
     document.getElementById('ov-url-rota-block').style.display     = c.url_rota ? 'block' : 'none';
 
     // Botón de enlace dentro del overlay
-    document.getElementById('ov-link-row').innerHTML = c.url
-      ? `<button type="button" class="link-btn" onclick="window.open('${c.url}','_blank','noopener')">Abrir convocatoria ↗</button>`
+    document.getElementById('ov-link-row').innerHTML = safeExternalUrl(c.url)
+      ? `<button type="button" class="link-btn" onclick="openConvUrl(${Number(c.id)})">Abrir convocatoria ↗</button>`
       : '';
 
     // Radar SVG
@@ -1702,17 +2041,73 @@
     document.getElementById('ov-dims').innerHTML = (c.dims||[]).map(d => `
       <div class="ring-dim">
         <div class="ring-dim-dot" style="background:${radarColor}"></div>
-        <div class="ring-dim-name">${d.name}</div>
+        <div class="ring-dim-name">${escapeHtml(d.name)}</div>
         <div class="ring-dim-bar"><div class="ring-dim-fill" style="width:${d.val}%;background:${radarColor}"></div></div>
         <div class="ring-dim-val">${d.val}%</div>
       </div>`).join('');
 
     // Summary, tags, action
-    document.getElementById('ov-summary').innerHTML = c.summary || '—';
-    document.getElementById('ov-action').innerHTML  = c.action  || '—';
+    document.getElementById('ov-summary').textContent = c.summary || '—';
+    document.getElementById('ov-action').textContent  = c.action  || '—';
     document.getElementById('ov-tags').innerHTML =
-      (c.keywords_found||[]).map(k => `<span class="tag desc" style="font-size:10px">${k}</span>`).join('') +
-      (c.tags||[]).filter(t => tagMap[t]).map(t => `<span class="tag ${t}">${tagMap[t]}</span>`).join('');
+      (c.keywords_found||[]).map(k => `<span class="tag desc" style="font-size:10px">${escapeHtml(k)}</span>`).join('') +
+      (c.tags||[]).filter(t => tagMap[t]).map(t => `<span class="tag ${t}">${escapeHtml(tagMap[t])}</span>`).join('') +
+      (c.tech_tags||[]).map(t => `<span class="analysis-badge">${escapeHtml(techTagMap[t] || t)}</span>`).join('');
+
+    document.getElementById('ov-evidence').innerHTML =
+      renderListHtml(c.positive_evidence, 'No se registraron evidencias positivas explícitas.');
+    document.getElementById('ov-risks').innerHTML =
+      renderListHtml(c.risks_and_unknowns, 'No se registraron riesgos adicionales.');
+    document.getElementById('ov-partners').innerHTML = (c.recommended_partners.length
+      ? `<ul class="detail-list">${c.recommended_partners.map(partner =>
+          `<li><strong>${escapeHtml(partner.name)}</strong>${partner.matching_capabilities?.length
+            ? ` — ${escapeHtml(partner.matching_capabilities.map(tag => techTagMap[tag] || tag).join(', '))}`
+            : ''}</li>`
+        ).join('')}</ul>`
+      : '<div class="ai-text">No se recomienda todavía un socio técnico.</div>') +
+      ((c.partner_needs||[]).length
+        ? `<div class="ai-text" style="margin-top:6px"><strong>Capacidades necesarias:</strong> ${escapeHtml(c.partner_needs.join(', '))}</div>`
+        : '');
+
+    const facts = c.call_facts || {};
+    const factRows = [
+      ['Estado', facts.call_status],
+      ['Programa', facts.programme],
+      ['Tipo de acción', facts.action_type],
+      ['Solicitantes', (facts.applicant_types||[]).join(', ')],
+      ['Entidades elegibles', (facts.eligible_entity_types||[]).join(', ')],
+      ['Ámbito geográfico', (facts.eligible_geographies||[]).join(', ')],
+      ['Evidencia de elegibilidad', (facts.eligibility_evidence||[]).join(' · ')],
+      ['Presupuesto total', facts.budget_total_eur == null ? null : `${facts.budget_total_eur} €`],
+      ['Presupuesto por proyecto', facts.project_budget_eur == null ? null : `${facts.project_budget_eur} €`],
+      ['Intensidad de ayuda', facts.funding_rate_percent == null ? null : `${facts.funding_rate_percent}%`],
+      ['Fecha límite extraída', facts.deadline_date],
+      ['Consorcio requerido', facts.consortium_required == null ? null : (facts.consortium_required ? 'Sí' : 'No')],
+      ['Evidencia sobre consorcio', facts.consortium_evidence],
+      ['Temas exigidos', (facts.required_topics||[]).join(', ')],
+      ['Resultados esperados', (facts.expected_outcomes||[]).join(', ')],
+      ['Fuente TRL', facts.trl_source],
+      ['Evidencia de fuente', (facts.evidence||[]).join(' · ')],
+      ['Datos ausentes', (facts.missing_fields||[]).join(', ')]
+    ].filter(([, value]) => value !== null && value !== undefined && String(value).trim());
+    document.getElementById('ov-facts').innerHTML = factRows.length
+      ? `<ul class="detail-list">${factRows.map(([label,value]) =>
+          `<li><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</li>`
+        ).join('')}</ul>`
+      : '<div class="ai-text">El JSON anterior no contiene extracción factual estructurada.</div>';
+
+    const relatedDocuments = Array.isArray(c.related_documents) ? c.related_documents : [];
+    const traceRows = [
+      c.source_type ? `Método: ${c.source_type}` : '',
+      c.discovered_via ? `Descubierta mediante: ${c.discovered_via}` : '',
+      c.bdns_id ? `BDNS: ${c.bdns_id}` : '',
+      c.programme_name ? `Programa: ${c.programme_name}` : '',
+      ...relatedDocuments.map(document =>
+        `${document.document_role || 'documento'} — ${document.source || ''}: ${document.title || document.url || ''}`
+      )
+    ].filter(Boolean);
+    document.getElementById('ov-trace').innerHTML =
+      renderListHtml(traceRows, 'Sin documentos relacionados adicionales.');
 
     // Descarte block
     const descBlock = document.getElementById('ov-descarte-block');

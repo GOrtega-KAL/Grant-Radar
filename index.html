@@ -55,10 +55,7 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background:
-      radial-gradient(circle at 10% -10%, rgba(21, 86, 168, .08), transparent 28%),
-      radial-gradient(circle at 105% 8%, rgba(216, 36, 54, .035), transparent 24%),
-      var(--bg);
+    background: var(--bg);
     color: var(--text);
     font-family: var(--font);
     -webkit-font-smoothing: antialiased;
@@ -94,6 +91,50 @@
     background: rgba(255, 255, 255, .88);
     box-shadow: var(--shadow-xs);
     backdrop-filter: blur(16px);
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .app-header::before,
+  .app-header::after {
+    content: "";
+    position: absolute;
+    left: -105.8px;
+    top: 50%;
+    width: 288px;
+    height: 288px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .app-header::before {
+    border: 0;
+    background: repeating-radial-gradient(
+      circle,
+      transparent 0 22px,
+      rgba(21, 86, 168, .11) 23px 24px
+    );
+    transform: translateY(-50%);
+  }
+  .app-header::after {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0 318deg,
+      rgba(21, 86, 168, .018) 330deg,
+      rgba(21, 86, 168, .21) 358deg,
+      transparent 360deg
+    );
+    transform: translateY(-50%) rotate(0deg);
+    animation: headerRadarSweep 7s linear infinite;
+  }
+  .app-header > * { position: relative; z-index: 1; }
+
+  @keyframes headerRadarSweep {
+    to { transform: translateY(-50%) rotate(360deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-header::after, .status-dot { animation: none; }
   }
 
   .brand {
@@ -108,6 +149,8 @@
     height: 46px;
     flex: 0 0 auto;
     object-fit: contain;
+    border-radius: 50%;
+    clip-path: circle(50% at 50% 50%);
   }
 
   .brand-copy { min-width: 0; }
@@ -202,7 +245,7 @@
   .overview-grid {
     display: grid;
     grid-template-columns: minmax(290px, 1.35fr) minmax(235px, .85fr) minmax(225px, .9fr) minmax(290px, 1.1fr);
-    grid-template-rows: 148px;
+    grid-template-rows: minmax(172px, auto);
     gap: 12px;
     margin-bottom: 14px;
   }
@@ -219,17 +262,6 @@
     overflow: hidden;
     border-radius: var(--radius-lg);
     padding: 18px;
-  }
-
-  .overview-card::after {
-    content: "";
-    position: absolute;
-    inset: auto -32px -52px auto;
-    width: 150px;
-    height: 150px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(21, 86, 168, .10), transparent 70%);
-    pointer-events: none;
   }
 
   .overview-kicker {
@@ -260,14 +292,13 @@
 
   .overview-main {
     color: var(--brand-dark);
-    background:
-      linear-gradient(145deg, rgba(234, 242, 252, .98), rgba(255, 255, 255, .98));
+    background: #edf4fc;
     border-color: rgba(21, 86, 168, .20);
   }
   .overview-main .overview-value { color: var(--brand); }
 
   .overview-urgent {
-    background: linear-gradient(145deg, rgba(253, 239, 241, .9), rgba(255, 255, 255, .98));
+    background: #fdf1f3;
     border-color: rgba(201, 52, 66, .18);
   }
   .overview-urgent .overview-value { color: var(--danger); font-size: 40px; }
@@ -290,10 +321,16 @@
     height: 100%;
   }
 
+  .metrics-card {
+    padding: 12px;
+    overflow: visible;
+  }
+
   .mini-metric {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 3px;
     min-width: 0;
     padding: 12px;
     border-radius: 13px;
@@ -301,9 +338,58 @@
     border: 1px solid var(--border);
   }
   .mini-metric:first-child { grid-column: 1 / -1; }
-  .mini-metric-label { color: var(--text-2); font-size: 11px; font-weight: 700; }
+  .mini-metric-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 24px;
+  }
+  .mini-metric-label { color: var(--text-2); font-size: 11px; line-height: 1.25; font-weight: 700; }
   .mini-metric-value { margin-top: 4px; color: var(--text); font-size: 26px; font-weight: 800; letter-spacing: -1px; }
-  .mini-metric-note { margin-top: 2px; color: var(--text-3); font-size: 10.5px; }
+  .mini-metric-note { margin-top: 2px; color: var(--text-3); font-size: 10.5px; line-height: 1.3; }
+
+  .info-tip {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+  .info-tip-button {
+    display: inline-grid;
+    place-items: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid rgba(21, 86, 168, .22);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--brand);
+    font-size: 10px;
+    font-weight: 850;
+    line-height: 1;
+    cursor: help;
+  }
+  .info-tooltip {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 8px);
+    z-index: 210;
+    display: none;
+    width: min(260px, 72vw);
+    padding: 10px 11px;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 10px;
+    background: var(--text);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.45;
+  }
+  .mini-metric:not(:first-child) .info-tooltip { right: 0; left: auto; }
+  .info-tip:hover .info-tooltip,
+  .info-tooltip.open { display: block; }
+  .info-tip.dismissed .info-tooltip { display: none; }
 
   .summary-card {
     display: flex;
@@ -403,11 +489,13 @@
   .source-dropdown { position: relative; flex: 0 0 auto; }
   .source-dropdown-button {
     display: inline-flex; align-items: center; justify-content: space-between;
-    gap: 8px; min-width: 142px; min-height: 34px; padding: 6px 10px;
+    gap: 8px; min-width: 158px; min-height: 34px; padding: 6px 10px;
     border: 1px solid var(--border); border-radius: 10px;
     background: var(--surface); color: var(--text-2);
     font-size: 11.5px; font-weight: 700; cursor: pointer;
   }
+  .source-dropdown-icon { flex: 0 0 auto; color: var(--brand); }
+  .source-dropdown-label { flex: 1 1 auto; text-align: left; white-space: nowrap; }
   .source-dropdown-button[aria-expanded="true"] { border-color: var(--brand); color: var(--brand); }
   .source-menu {
     position: absolute; top: calc(100% + 6px); left: 0; z-index: 180;
@@ -425,6 +513,24 @@
   .source-option.active { background: var(--brand); color: #fff; }
   .source-count { opacity: .75; font-family: var(--font-mono); }
 
+  .download-dropdown { position: relative; flex: 0 0 auto; }
+  .download-button { white-space: nowrap; }
+  .download-menu {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 190;
+    display: none; min-width: 225px; padding: 6px;
+    border: 1px solid var(--border); border-radius: 11px;
+    background: var(--surface); box-shadow: var(--shadow-md);
+  }
+  .download-menu.open { display: grid; gap: 3px; }
+  .download-option {
+    display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 8px;
+    width: 100%; padding: 8px 9px; border: 0; border-radius: 8px;
+    background: transparent; color: var(--text-2); text-align: left; cursor: pointer;
+  }
+  .download-option:hover, .download-option:focus-visible { background: var(--brand-soft-2); color: var(--brand); }
+  .download-format { font-weight: 800; }
+  .download-description { display: block; margin-top: 2px; color: var(--text-3); font-size: 10.5px; line-height: 1.25; }
+
   .toolbar-actions {
     display: flex;
     align-items: center;
@@ -438,7 +544,7 @@
     min-height: 36px;
     border: 1px solid var(--border);
     border-radius: 10px;
-    overflow: hidden;
+    overflow: visible;
     background: var(--surface);
   }
 
@@ -478,8 +584,8 @@
     font-size: 11px; line-height: 1.45;
   }
   .sort-help:hover .sort-tooltip,
-  .sort-help:focus-within .sort-tooltip,
   .sort-tooltip.open { display: block; }
+  .sort-help.dismissed .sort-tooltip { display: none; }
 
   .title-search { display: flex; align-items: center; gap: 6px; min-width: min(100%, 370px); }
   .title-search input {
@@ -496,6 +602,7 @@
     background: var(--surface-2);
     color: var(--brand);
     font-weight: 850;
+    border-radius: 0 9px 9px 0;
   }
   .sort-direction-btn:hover { background: var(--brand-soft); }
 
@@ -573,7 +680,7 @@
     min-height: 49px;
     padding: 12px 15px;
     border-bottom: 1px solid var(--border);
-    background: linear-gradient(180deg, #fff, #fbfcfe);
+    background: var(--surface);
   }
   .panel-heading-group { min-width: 0; }
   .results-header-controls { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
@@ -851,7 +958,7 @@
     width: 100%;
     min-height: 4px;
     border-radius: 5px 5px 2px 2px;
-    background: linear-gradient(to top, var(--brand), #7aa8df);
+    background: var(--brand);
     opacity: .9;
     transition: opacity .15s ease, transform .15s ease;
   }
@@ -867,7 +974,7 @@
     color: var(--text-3);
     font-size: 10.5px;
   }
-  .footer-right { display: flex; align-items: center; gap: 12px; }
+  .footer-right { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 6px 12px; }
 
   /* Modal */
   .modal-overlay {
@@ -1057,19 +1164,27 @@
   /* Mobile filters drawer */
   .mobile-toolbar-trigger { display: none; }
 
+  @media (max-width: 1500px) {
+    .toolbar { grid-template-columns: minmax(0, 1fr); }
+    .filter-zone { gap: 9px; }
+    .chip-scroll { flex-wrap: wrap; overflow: visible; }
+    .toolbar-actions { justify-content: flex-start; flex-wrap: wrap; }
+    .filter-caption { display: none; }
+    .sort-tooltip { right: auto; left: 0; }
+  }
+
   @media (max-width: 1280px) {
     .overview-grid { grid-template-columns: 1.2fr .85fr .9fr 1fr; }
     .workspace { grid-template-columns: minmax(0, 1fr) 330px; }
-    .filter-zone { gap: 9px; }
-    .filter-caption { display: none; }
   }
 
   @media (max-width: 1080px) {
-    .overview-grid { grid-template-columns: 1.2fr .9fr 1fr; grid-template-rows: 144px 132px; }
+    .overview-grid { grid-template-columns: 1.2fr .9fr; grid-template-rows: none; grid-auto-rows: auto; }
+    .metrics-card { grid-column: 1 / -1; }
     .summary-card { grid-column: 1 / -1; }
     .metric-stack { grid-template-columns: repeat(3, 1fr); height: auto; }
     .mini-metric:first-child { grid-column: auto; }
-    .mini-metric { min-height: 106px; }
+    .mini-metric { min-height: 104px; }
     .workspace { grid-template-columns: 1fr; }
     .sidebar { position: static; display: grid; grid-template-columns: 1fr 1fr 1fr; }
     .toolbar { top: 88px; }
@@ -1078,6 +1193,7 @@
   @media (max-width: 820px) {
     .app-shell { padding: 10px 10px 22px; }
     .app-header { top: 0; min-height: 64px; padding: 8px 10px; border-radius: 13px; }
+    .app-header::before, .app-header::after { left: -114.8px; }
     .brand-logo { width: 40px; height: 40px; }
     .brand-copy h1 { font-size: 17px; }
     .brand-copy p { font-size: 11.5px; }
@@ -1089,8 +1205,7 @@
     .metrics-card { grid-column: 1 / -1; }
     .metric-stack { grid-template-columns: repeat(3, 1fr); height: auto; }
     .mini-metric:first-child { grid-column: auto; }
-    .mini-metric { min-height: 94px; }
-    .mini-metric-note { display: none; }
+    .mini-metric { min-height: 104px; }
     .summary-card { grid-column: 1 / -1; min-height: 142px; }
 
     .toolbar {
@@ -1133,9 +1248,10 @@
     .source-menu { width: 100%; margin-top: 6px; box-shadow: var(--shadow-sm); }
     .filter-zone.mobile-visible .source-menu { position: static; }
     .toolbar-actions { flex: 1 0 100%; justify-content: space-between; }
-    .toolbar-actions .toggle-control, .toolbar-actions .ghost-btn { display: none; }
+    .toolbar-actions .toggle-control, .toolbar-actions .ghost-btn, .toolbar-actions > .download-dropdown { display: none; }
     .sort-control { flex: 1; }
     .sort-control select { flex: 1; width: 100%; min-width: 0; }
+    .sort-tooltip { right: 0; left: auto; }
 
     .sidebar { grid-template-columns: 1fr; }
     .analytics-grid { grid-template-columns: 1fr; }
@@ -1240,16 +1356,34 @@
     <article class="overview-card metrics-card">
       <div class="metric-stack">
         <div class="mini-metric">
-          <div class="mini-metric-label">Convocatorias abiertas</div>
+          <div class="mini-metric-head">
+            <div class="mini-metric-label">Convocatorias abiertas</div>
+            <span class="info-tip">
+              <button class="info-tip-button" type="button" aria-label="Qué significa convocatorias abiertas" aria-describedby="metric-help-active" aria-expanded="false" onfocus="toggleInfoTooltip(this, true)" onblur="toggleInfoTooltip(this, false)" onclick="toggleInfoTooltip(this, true)">?</button>
+              <span class="info-tooltip" id="metric-help-active" role="tooltip">Convocatorias vigentes que han superado los filtros deterministas. Pueden incluir casos marcados para comprobar datos concretos.</span>
+            </span>
+          </div>
           <div class="mini-metric-value" id="cnt-active">0</div>
           <div class="mini-metric-note">Disponibles tras filtros duros</div>
         </div>
         <div class="mini-metric">
-          <div class="mini-metric-label">Descartadas</div>
+          <div class="mini-metric-head">
+            <div class="mini-metric-label">Descartadas</div>
+            <span class="info-tip">
+              <button class="info-tip-button" type="button" aria-label="Qué significa descartadas" aria-describedby="metric-help-discarded" aria-expanded="false" onfocus="toggleInfoTooltip(this, true)" onblur="toggleInfoTooltip(this, false)" onclick="toggleInfoTooltip(this, true)">?</button>
+              <span class="info-tooltip" id="metric-help-discarded" role="tooltip">Convocatorias vigentes excluidas por incompatibilidad demostrada, falta de encaje o por no representar una oportunidad directa para Kalfrisa.</span>
+            </span>
+          </div>
           <div class="mini-metric-value" id="cnt-discarded">0</div>
         </div>
         <div class="mini-metric">
-          <div class="mini-metric-label">Marcadas</div>
+          <div class="mini-metric-head">
+            <div class="mini-metric-label">Marcadas</div>
+            <span class="info-tip">
+              <button class="info-tip-button" type="button" aria-label="Qué significa marcadas" aria-describedby="metric-help-review" aria-expanded="false" onfocus="toggleInfoTooltip(this, true)" onblur="toggleInfoTooltip(this, false)" onclick="toggleInfoTooltip(this, true)">?</button>
+              <span class="info-tooltip" id="metric-help-review" role="tooltip">Convocatorias abiertas que siguen siendo relevantes, pero requieren confirmar algún dato como elegibilidad, presupuesto, consorcio o plazo.</span>
+            </span>
+          </div>
           <div class="mini-metric-value" id="cnt-review">0</div>
         </div>
       </div>
@@ -1263,7 +1397,7 @@
 
   <section class="toolbar" aria-label="Filtros y ordenación">
     <button class="ghost-btn mobile-toolbar-trigger" type="button" onclick="toggleMobileFilters()">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h7m4 0h5M4 12h3m4 0h9M4 18h10m4 0h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="6" r="1.8" stroke="currentColor" stroke-width="1.4"/><circle cx="9" cy="12" r="1.8" stroke="currentColor" stroke-width="1.4"/><circle cx="16" cy="18" r="1.8" stroke="currentColor" stroke-width="1.4"/></svg>
       Filtros <span id="mobile-filter-count"></span>
     </button>
 
@@ -1273,14 +1407,18 @@
         <div class="source-dropdown" id="source-dropdown">
           <button class="source-dropdown-button" id="source-dropdown-button" type="button"
                   aria-haspopup="listbox" aria-expanded="false" aria-controls="source-menu"
-                  onclick="toggleSourceMenu()">Fuente: Todas <span aria-hidden="true">▾</span></button>
+                  onclick="toggleSourceMenu()">
+            <svg class="source-dropdown-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h7m4 0h5M4 12h3m4 0h9M4 18h10m4 0h2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="13" cy="6" r="1.8" stroke="currentColor" stroke-width="1.4"/><circle cx="9" cy="12" r="1.8" stroke="currentColor" stroke-width="1.4"/><circle cx="16" cy="18" r="1.8" stroke="currentColor" stroke-width="1.4"/></svg>
+            <span class="source-dropdown-label" id="source-dropdown-label">Fuente: Todas</span>
+            <span aria-hidden="true">▾</span>
+          </button>
           <div class="source-menu" id="source-menu" role="listbox" aria-label="Filtrar por fuente"></div>
         </div>
       </div>
       <div class="filter-cluster">
         <span class="filter-caption">Temática</span>
         <div class="chip-scroll">
-          <button class="filter-chip active" type="button" onclick="setFilter('tag','all',this)">Todas</button>
+          <button class="filter-chip active" type="button" onclick="setFilter('tag','all',this)">Cualquier temática</button>
           <button class="filter-chip" type="button" onclick="setFilter('tag','h2',this)">H₂</button>
           <button class="filter-chip" type="button" onclick="setFilter('tag','ee',this)">Eficiencia</button>
           <button class="filter-chip" type="button" onclick="setFilter('tag','desc',this)">Descarbonización</button>
@@ -1301,7 +1439,16 @@
             <span class="toggle-track"><span class="toggle-thumb"></span></span>
             Solo marcadas
           </label>
-          <button class="ghost-btn" type="button" onclick="exportCSV()">Exportar CSV</button>
+          <div class="download-dropdown">
+            <button class="ghost-btn download-button" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleDownloadMenu(this)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Descargar <span aria-hidden="true">▾</span>
+            </button>
+            <div class="download-menu" role="menu" aria-label="Formato de descarga">
+              <button class="download-option" type="button" role="menuitem" onclick="downloadExport('xlsx', this)"><span class="download-format">XLSX</span><span>Libro de Excel<span class="download-description">Con formato, filtros y columnas ajustadas</span></span></button>
+              <button class="download-option" type="button" role="menuitem" onclick="downloadExport('csv', this)"><span class="download-format">CSV</span><span>Texto delimitado<span class="download-description">Compatible con Excel y otros sistemas</span></span></button>
+            </div>
+          </div>
           <button class="ghost-btn" type="button" onclick="window.print()">Imprimir</button>
         </div>
       </div>
@@ -1317,7 +1464,7 @@
           <option value="confidence">Confianza</option>
         </select>
         <span class="sort-help">
-          <button class="sort-help-button" id="sort-help-button" type="button" aria-label="Explicación del criterio de ordenación" aria-describedby="sort-tooltip" aria-expanded="false" onclick="toggleSortTooltip()">?</button>
+          <button class="sort-help-button" id="sort-help-button" type="button" aria-label="Explicación del criterio de ordenación" aria-describedby="sort-tooltip" aria-expanded="false" onfocus="toggleSortTooltip(true)" onblur="toggleSortTooltip(false)" onclick="toggleSortTooltip(true)">?</button>
           <span class="sort-tooltip" id="sort-tooltip" role="tooltip"></span>
         </span>
         <button class="sort-direction-btn" id="sort-direction" type="button" onclick="toggleSortDirection()" title="Cambiar sentido de ordenación" aria-label="Cambiar sentido de ordenación">↓</button>
@@ -1332,10 +1479,16 @@
         <span class="toggle-track"><span class="toggle-thumb"></span></span>
         Solo marcadas
       </label>
-      <button class="ghost-btn" type="button" onclick="exportCSV()">
+      <div class="download-dropdown">
+        <button class="ghost-btn download-button" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleDownloadMenu(this)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        CSV
-      </button>
+          Descargar <span aria-hidden="true">▾</span>
+        </button>
+        <div class="download-menu" role="menu" aria-label="Formato de descarga">
+          <button class="download-option" type="button" role="menuitem" onclick="downloadExport('xlsx', this)"><span class="download-format">XLSX</span><span>Libro de Excel<span class="download-description">Con formato, filtros y columnas ajustadas</span></span></button>
+          <button class="download-option" type="button" role="menuitem" onclick="downloadExport('csv', this)"><span class="download-format">CSV</span><span>Texto delimitado<span class="download-description">Compatible con Excel y otros sistemas</span></span></button>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1408,7 +1561,7 @@
 
   <footer class="footer">
     <div>Grant-Radar · Herramienta interna de vigilancia I+D para Kalfrisa</div>
-    <div class="footer-right"><span id="footer-schema">Esquema —</span><span id="footer-pipeline">Pipeline —</span></div>
+    <div class="footer-right"><time id="footer-updated">Última actualización de datos: —</time><span aria-hidden="true">·</span><span id="footer-schema">Esquema —</span><span id="footer-pipeline">Pipeline —</span></div>
   </footer>
 </div>
 
@@ -1677,7 +1830,7 @@
         <span>${escapeHtml(label)}</span><span class="source-count">${count}</span>
       </button>`).join('');
     const currentLabel = filterState.source === 'all' ? 'Todas' : filterState.source;
-    document.getElementById('source-dropdown-button').firstChild.textContent = `Fuente: ${currentLabel} `;
+    document.getElementById('source-dropdown-label').textContent = `Fuente: ${currentLabel}`;
   }
 
   function toggleSourceMenu(force) {
@@ -1722,6 +1875,24 @@
     const tooltip = document.getElementById('sort-tooltip');
     const button = document.getElementById('sort-help-button');
     const open = typeof force === 'boolean' ? force : !tooltip.classList.contains('open');
+    button.closest('.sort-help')?.classList.toggle('dismissed', !open);
+    tooltip.classList.toggle('open', open);
+    button.setAttribute('aria-expanded', String(open));
+  }
+
+  function toggleInfoTooltip(button, force) {
+    const tooltipId = button.getAttribute('aria-describedby');
+    const tooltip = tooltipId ? document.getElementById(tooltipId) : null;
+    if (!tooltip) return;
+    const open = typeof force === 'boolean' ? force : !tooltip.classList.contains('open');
+    button.closest('.info-tip')?.classList.toggle('dismissed', !open);
+    document.querySelectorAll('.info-tooltip.open').forEach(other => {
+      if (other !== tooltip) {
+        other.classList.remove('open');
+        const owner = document.querySelector(`[aria-describedby="${other.id}"]`);
+        owner?.setAttribute('aria-expanded', 'false');
+      }
+    });
     tooltip.classList.toggle('open', open);
     button.setAttribute('aria-expanded', String(open));
   }
@@ -1816,43 +1987,259 @@
     if (currentOverlayId !== null) openConvUrl(currentOverlayId);
   }
 
-  function exportCSV() {
-    const list = getFiltered();
+  function buildExportTable(list = getFiltered()) {
     const headers = [
-      'ID', 'Fuente', 'Título', 'Organismo', 'Encaje %', 'Accionabilidad %', 'Confianza %', 'Prioridad',
-      'Elegibilidad', 'Decisión', 'Rol recomendado', 'Días restantes', 'Apertura', 'Cierre', 'TRL mín', 'TRL máx',
-      'Socios recomendados', 'Necesidades de socio', 'Temáticas', 'Taxonomía tecnológica', 'Calidad de evidencia',
-      'Evidencias positivas', 'Riesgos e incógnitas', 'Revisión manual', 'Motivos de revisión', 'Tokens entrada',
-      'Tokens salida', 'Tokens totales', 'Coste IA estimado USD', 'Descartada', 'URL'
+      'Identificador', 'Título', 'Fuente principal', 'Fuentes de descubrimiento', 'Organismo', 'Programa',
+      'Mecanismo de financiación', 'Estado', 'Apertura', 'Cierre', 'Días restantes', 'Fecha sin confirmar',
+      'Compatibilidad %', 'Accionabilidad %', 'Confianza %', 'Prioridad', 'Elegibilidad', 'Motivo de elegibilidad',
+      'Decisión', 'Papel de oportunidad', 'Rol recomendado', 'Presupuesto publicado', 'Presupuesto total EUR',
+      'Coste mínimo de proyecto EUR', 'Ayuda máxima EUR', 'Financiación %', 'TRL mínimo', 'TRL máximo',
+      'Consorcio obligatorio', 'Geografías elegibles', 'Tipos de solicitante', 'Temas requeridos', 'Temáticas',
+      'Taxonomía tecnológica', 'Resumen', 'Siguiente acción', 'Evidencias positivas', 'Riesgos e incógnitas',
+      'Requiere comprobación', 'Motivos de comprobación', 'Socios recomendados', 'Necesidades de socio',
+      'Calidad de evidencia', 'Descartada', 'URL oficial'
     ];
-    const esc = value => {
-      const text = String(value ?? '').replace(/"/g, '""');
-      return /[,"\n]/.test(text) ? `"${text}"` : text;
+    const listText = values => (Array.isArray(values) ? values : [])
+      .map(item => {
+        if (item && typeof item === 'object') {
+          return item.name || item.canonical_name || item.partner_id || item.claim
+            || item.evidence || item.capability || item.reason || item.label || '';
+        }
+        return item;
+      })
+      .filter(value => value !== null && value !== undefined && String(value).trim())
+      .join(' | ');
+    const yesNo = value => value === true ? 'Sí' : value === false ? 'No' : '';
+    const statusMap = {
+      open: 'Abierta', forthcoming: 'Próxima', open_ended: 'Ventanilla abierta',
+      closed: 'Cerrada', unknown: 'Desconocido'
     };
-    const rows = list.map(c => [
-      c.id, c.source, c.title, c.org, c.fit_score, c.actionability_score, c.confidence ?? '',
+    const mechanismMap = { direct: 'Directa', cascade: 'En cascada', unknown: 'Desconocido' };
+    const opportunityRoleMap = {
+      direct_beneficiary: 'Beneficiaria directa', consortium_partner: 'Socia de consorcio',
+      cluster_route: 'Vía clúster', unknown: 'Sin determinar'
+    };
+    const rows = list.map(c => {
+      const facts = c.call_facts || {};
+      return [
+      c.identifier || c.bdns_id || c.id, c.title, c.source, listText(c.discovery_sources), c.org,
+      facts.programme || c.programme_name || c.programme_key || '',
+      mechanismMap[c.funding_mechanism] || c.funding_mechanism || 'Desconocido',
+      statusMap[facts.call_status] || facts.call_status || '', c.open_date || '', c.deadline_date || '',
+      Number.isFinite(c.deadline) ? c.deadline : '', yesNo(c.fecha_sin_confirmar),
+      c.fit_score, c.actionability_score, c.confidence ?? '',
       c.priority === 'high' ? 'Alta' : c.priority === 'medium' ? 'Media' : 'Baja',
-      eligibilityMap[c.eligibility] || c.eligibility, decisionMap[c.decision] || c.decision,
-      roleMap[c.recommended_role] || c.recommended_role, c.deadline, c.open_date || '', c.deadline_date || '',
-      c.trl_min ?? '', c.trl_max ?? '',
-      (c.recommended_partners || []).map(p => p.name || p.canonical_name || p.partner_id).join(' | ') || c.socio_consorcio || '',
-      (c.partner_needs || []).map(item => typeof item === 'object' ? item.capability || item.reason : item).join(' | '),
-      (c.tags || []).map(tag => tagMap[tag] || tag).join(' | '),
-      (c.tech_tags || []).map(tag => techTagMap[tag] || tag).join(' | '), c.evidence_quality || '',
-      (c.positive_evidence || []).map(item => typeof item === 'object' ? item.claim || item.evidence : item).join(' | '),
-      (c.risks_and_unknowns || []).join(' | '), c.review_required ? 'Sí' : 'No',
-      (c.review_reasons || []).map(reason => reviewReasonMap[reason] || reason).join(' | '),
-      c.token_usage?.input_tokens ?? '', c.token_usage?.output_tokens ?? '', c.token_usage?.total_tokens ?? '',
-      c.token_usage?.estimated_cost_usd ?? '', c.descartada ? 'Sí' : 'No', c.url || ''
-    ].map(esc).join(','));
+      eligibilityMap[c.eligibility] || c.eligibility, c.eligibility_reason || '',
+      decisionMap[c.decision] || c.decision,
+      listText(c.opportunity_labels) || opportunityRoleMap[c.opportunity_role] || c.opportunity_role || '',
+      roleMap[c.recommended_role] || c.recommended_role, c.budget || c.budget_raw || '',
+      facts.budget_total_eur ?? '', facts.project_cost_min_eur ?? '', facts.grant_max_eur ?? '',
+      facts.funding_rate_percent ?? '', facts.trl_min ?? c.trl_min ?? '', facts.trl_max ?? c.trl_max ?? '',
+      yesNo(facts.consortium_required), listText(facts.eligible_geographies),
+      listText(facts.applicant_types?.length ? facts.applicant_types : facts.eligible_entity_types),
+      listText(facts.required_topics), listText((c.tags || []).map(tag => tagMap[tag] || tag)),
+      listText((c.tech_tags || []).map(tag => techTagMap[tag] || tag)), c.summary || '', c.action || '',
+      listText(c.positive_evidence), listText(c.risks_and_unknowns), yesNo(c.review_required),
+      listText((c.review_reasons || []).map(reason => reviewReasonMap[reason] || reason)),
+      listText(c.recommended_partners) || c.socio_consorcio || '', listText(c.partner_needs),
+      c.evidence_quality || '', yesNo(c.descartada), c.url || ''
+      ];
+    });
 
-    const csv = '\uFEFF' + [headers.map(esc).join(','), ...rows].join('\r\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    return { headers, rows };
+  }
+
+  function safeSpreadsheetText(value, preserveLines = false) {
+    let text = String(value ?? '')
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '')
+      .replace(/\r\n?/g, '\n')
+      .trim();
+    if (!preserveLines) text = text.replace(/\s+/g, ' ');
+    if (/^[=+\-@]/.test(text)) text = `'${text}`;
+    return text;
+  }
+
+  function buildFilteredCSV(list = getFiltered()) {
+    const { headers, rows } = buildExportTable(list);
+    const esc = value => `"${safeSpreadsheetText(value).replace(/"/g, '""')}"`;
+    return '\uFEFFsep=;\r\n' + [headers, ...rows].map(row => row.map(esc).join(';')).join('\r\n');
+  }
+
+  function spreadsheetColumnName(index) {
+    let name = '';
+    for (let value = index + 1; value > 0; value = Math.floor((value - 1) / 26)) {
+      name = String.fromCharCode(65 + ((value - 1) % 26)) + name;
+    }
+    return name;
+  }
+
+  function escapeSpreadsheetXml(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+  }
+
+  function xlsxColumnWidth(header) {
+    if (header === 'Título') return 52;
+    if (['Resumen', 'Siguiente acción'].includes(header)) return 58;
+    if (['Evidencias positivas', 'Riesgos e incógnitas', 'Motivo de elegibilidad', 'Motivos de comprobación'].includes(header)) return 42;
+    if (['Geografías elegibles', 'Tipos de solicitante', 'Temas requeridos', 'Taxonomía tecnológica', 'Necesidades de socio'].includes(header)) return 30;
+    if (['Organismo', 'Programa', 'Fuentes de descubrimiento', 'Presupuesto publicado', 'Socios recomendados'].includes(header)) return 26;
+    if (header === 'URL oficial') return 46;
+    if (header === 'Identificador') return 22;
+    if (header.includes('Fecha') || ['Apertura', 'Cierre'].includes(header)) return 14;
+    if (header.includes('%') || header.includes('EUR') || header.startsWith('TRL') || header === 'Días restantes') return 16;
+    return Math.min(24, Math.max(13, header.length + 2));
+  }
+
+  function xlsxCellXml(value, rowIndex, columnIndex, style) {
+    const reference = `${spreadsheetColumnName(columnIndex)}${rowIndex}`;
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return `<c r="${reference}" s="${style}"><v>${value}</v></c>`;
+    }
+    const text = safeSpreadsheetText(value, true);
+    return `<c r="${reference}" s="${style}" t="inlineStr"><is><t xml:space="preserve">${escapeSpreadsheetXml(text)}</t></is></c>`;
+  }
+
+  function uint16LE(value) {
+    return Uint8Array.of(value & 255, (value >>> 8) & 255);
+  }
+
+  function uint32LE(value) {
+    return Uint8Array.of(value & 255, (value >>> 8) & 255, (value >>> 16) & 255, (value >>> 24) & 255);
+  }
+
+  function concatByteArrays(parts) {
+    const length = parts.reduce((total, part) => total + part.length, 0);
+    const result = new Uint8Array(length);
+    let offset = 0;
+    parts.forEach(part => { result.set(part, offset); offset += part.length; });
+    return result;
+  }
+
+  let spreadsheetCrcTable;
+  function spreadsheetCrc32(bytes) {
+    if (!spreadsheetCrcTable) {
+      spreadsheetCrcTable = new Uint32Array(256);
+      for (let index = 0; index < 256; index += 1) {
+        let value = index;
+        for (let bit = 0; bit < 8; bit += 1) value = (value & 1) ? (0xEDB88320 ^ (value >>> 1)) : (value >>> 1);
+        spreadsheetCrcTable[index] = value >>> 0;
+      }
+    }
+    let crc = 0xFFFFFFFF;
+    bytes.forEach(byte => { crc = spreadsheetCrcTable[(crc ^ byte) & 255] ^ (crc >>> 8); });
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function spreadsheetDosTimestamp(date = new Date()) {
+    const year = Math.max(1980, date.getFullYear());
+    const time = (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2);
+    const day = ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate();
+    return { time, day };
+  }
+
+  function buildSpreadsheetZip(entries) {
+    const encoder = new TextEncoder();
+    const localParts = [];
+    const centralParts = [];
+    const timestamp = spreadsheetDosTimestamp();
+    let offset = 0;
+    entries.forEach(([name, content]) => {
+      const nameBytes = encoder.encode(name);
+      const data = typeof content === 'string' ? encoder.encode(content) : content;
+      const crc = spreadsheetCrc32(data);
+      const local = concatByteArrays([
+        uint32LE(0x04034B50), uint16LE(20), uint16LE(0), uint16LE(0),
+        uint16LE(timestamp.time), uint16LE(timestamp.day), uint32LE(crc),
+        uint32LE(data.length), uint32LE(data.length), uint16LE(nameBytes.length), uint16LE(0),
+        nameBytes, data
+      ]);
+      localParts.push(local);
+      centralParts.push(concatByteArrays([
+        uint32LE(0x02014B50), uint16LE(20), uint16LE(20), uint16LE(0), uint16LE(0),
+        uint16LE(timestamp.time), uint16LE(timestamp.day), uint32LE(crc),
+        uint32LE(data.length), uint32LE(data.length), uint16LE(nameBytes.length),
+        uint16LE(0), uint16LE(0), uint16LE(0), uint16LE(0), uint32LE(0), uint32LE(offset), nameBytes
+      ]));
+      offset += local.length;
+    });
+    const central = concatByteArrays(centralParts);
+    const end = concatByteArrays([
+      uint32LE(0x06054B50), uint16LE(0), uint16LE(0), uint16LE(entries.length),
+      uint16LE(entries.length), uint32LE(central.length), uint32LE(offset), uint16LE(0)
+    ]);
+    return concatByteArrays([...localParts, central, end]);
+  }
+
+  function buildFilteredXLSX(list = getFiltered()) {
+    const { headers, rows } = buildExportTable(list);
+    const lastColumn = spreadsheetColumnName(headers.length - 1);
+    const lastRow = Math.max(1, rows.length + 1);
+    const columnsXml = headers.map((header, index) =>
+      `<col min="${index + 1}" max="${index + 1}" width="${xlsxColumnWidth(header)}" customWidth="1"/>`
+    ).join('');
+    const headerXml = headers.map((value, index) => xlsxCellXml(value, 1, index, 1)).join('');
+    const bodyXml = rows.map((row, rowOffset) => {
+      const rowIndex = rowOffset + 2;
+      const style = rowOffset % 2 === 0 ? 2 : 3;
+      return `<row r="${rowIndex}" ht="42" customHeight="1">${row.map((value, columnIndex) => xlsxCellXml(value, rowIndex, columnIndex, style)).join('')}</row>`;
+    }).join('');
+    const worksheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="A1:${lastColumn}${lastRow}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${columnsXml}</cols><sheetData><row r="1" ht="31" customHeight="1">${headerXml}</row>${bodyXml}</sheetData><autoFilter ref="A1:${lastColumn}${lastRow}"/><pageMargins left="0.25" right="0.25" top="0.5" bottom="0.5" header="0.2" footer="0.2"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/></worksheet>`;
+    const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="10"/><name val="Aptos"/><family val="2"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="10"/><name val="Aptos Display"/><family val="2"/></font></fonts><fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1556A8"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF3F7FD"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color rgb="FFDCE5F0"/></left><right style="thin"><color rgb="FFDCE5F0"/></right><top style="thin"><color rgb="FFDCE5F0"/></top><bottom style="thin"><color rgb="FFDCE5F0"/></bottom><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="0" fontId="0" fillId="3" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+    const now = new Date().toISOString();
+    return buildSpreadsheetZip([
+      ['[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/></Types>`],
+      ['_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`],
+      ['xl/workbook.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Convocatorias" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029"/></workbook>`],
+      ['xl/_rels/workbook.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+      ['xl/styles.xml', styles],
+      ['xl/worksheets/sheet1.xml', worksheet],
+      ['docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>Convocatorias filtradas de Grant-Radar</dc:title><dc:creator>Grant-Radar · Kalfrisa</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${now}</dcterms:created></cp:coreProperties>`],
+      ['docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>Grant-Radar</Application><DocSecurity>0</DocSecurity><AppVersion>1.0</AppVersion></Properties>`]
+    ]);
+  }
+
+  function downloadBlob(blob, extension) {
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `grant-radar-kalfrisa-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `grant-radar-kalfrisa-filtrado-${new Date().toISOString().slice(0, 10)}.${extension}`;
     link.click();
-    URL.revokeObjectURL(link.href);
+    setTimeout(() => URL.revokeObjectURL(link.href), 0);
+  }
+
+  function exportCSV() {
+    const csv = buildFilteredCSV();
+    downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), 'csv');
+  }
+
+  function exportXLSX() {
+    downloadBlob(new Blob([buildFilteredXLSX()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'xlsx');
+  }
+
+  function toggleDownloadMenu(button, force) {
+    const dropdown = button.closest('.download-dropdown');
+    const menu = dropdown?.querySelector('.download-menu');
+    if (!menu) return;
+    const open = typeof force === 'boolean' ? force : !menu.classList.contains('open');
+    document.querySelectorAll('.download-menu.open').forEach(other => {
+      if (other !== menu) {
+        other.classList.remove('open');
+        other.closest('.download-dropdown')?.querySelector('.download-button')?.setAttribute('aria-expanded', 'false');
+      }
+    });
+    menu.classList.toggle('open', open);
+    button.setAttribute('aria-expanded', String(open));
+    if (open) menu.querySelector('.download-option')?.focus();
+  }
+
+  function downloadExport(format, option) {
+    const dropdown = option.closest('.download-dropdown');
+    const button = dropdown?.querySelector('.download-button');
+    if (button) toggleDownloadMenu(button, false);
+    if (format === 'xlsx') exportXLSX();
+    else exportCSV();
   }
 
   async function loadData() {
@@ -1889,12 +2276,23 @@
 
   function updateGeneratedTimestamp() {
     const element = document.getElementById('ts');
+    const footerElement = document.getElementById('footer-updated');
     if (!dashboardMeta.generated_at) {
       element.textContent = 'Modo demostración';
+      footerElement.textContent = 'Última actualización de datos: no disponible';
+      footerElement.removeAttribute('datetime');
       return;
     }
     const date = new Date(dashboardMeta.generated_at);
+    if (Number.isNaN(date.getTime())) {
+      element.textContent = 'Actualización desconocida';
+      footerElement.textContent = 'Última actualización de datos: no disponible';
+      footerElement.removeAttribute('datetime');
+      return;
+    }
     element.textContent = `Actualizado ${date.toLocaleDateString('es-ES', { day: '2-digit', month: 'short' })} · ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+    footerElement.textContent = `Última actualización de datos: ${date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} · ${date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`;
+    footerElement.setAttribute('datetime', date.toISOString());
   }
 
   function loadDemoData() {
@@ -2295,9 +2693,30 @@
       if (document.getElementById('ai-overlay').classList.contains('visible')) closeOverlay();
       if (sourceMenu.classList.contains('open')) { toggleSourceMenu(false); sourceButton.focus(); }
       if (sortTooltip.classList.contains('open')) { toggleSortTooltip(false); document.getElementById('sort-help-button').focus(); }
+      const openDownloadMenu = document.querySelector('.download-menu.open');
+      if (openDownloadMenu) {
+        const owner = openDownloadMenu.closest('.download-dropdown')?.querySelector('.download-button');
+        if (owner) { toggleDownloadMenu(owner, false); owner.focus(); }
+      }
+      const openInfo = document.querySelector('.info-tooltip.open');
+      if (openInfo) {
+        const owner = document.querySelector(`[aria-describedby="${openInfo.id}"]`);
+        if (owner) { toggleInfoTooltip(owner, false); owner.focus(); }
+      }
     }
     if (sourceMenu.classList.contains('open') && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
       const options = [...sourceMenu.querySelectorAll('.source-option')];
+      if (!options.length) return;
+      event.preventDefault();
+      const current = Math.max(0, options.indexOf(document.activeElement));
+      const next = event.key === 'Home' ? 0
+        : event.key === 'End' ? options.length - 1
+        : (current + (event.key === 'ArrowDown' ? 1 : -1) + options.length) % options.length;
+      options[next].focus();
+    }
+    const downloadMenu = document.activeElement?.closest('.download-menu');
+    if (downloadMenu?.classList.contains('open') && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+      const options = [...downloadMenu.querySelectorAll('.download-option')];
       if (!options.length) return;
       event.preventDefault();
       const current = Math.max(0, options.indexOf(document.activeElement));
@@ -2318,7 +2737,19 @@
 
   document.addEventListener('click', event => {
     if (!event.target.closest('.source-dropdown')) toggleSourceMenu(false);
+    if (!event.target.closest('.download-dropdown')) {
+      document.querySelectorAll('.download-menu.open').forEach(menu => {
+        const owner = menu.closest('.download-dropdown')?.querySelector('.download-button');
+        if (owner) toggleDownloadMenu(owner, false);
+      });
+    }
     if (!event.target.closest('.sort-help')) toggleSortTooltip(false);
+    if (!event.target.closest('.info-tip')) {
+      document.querySelectorAll('.info-tooltip.open').forEach(tooltip => {
+        const owner = document.querySelector(`[aria-describedby="${tooltip.id}"]`);
+        if (owner) toggleInfoTooltip(owner, false);
+      });
+    }
   });
 
   document.getElementById('source-dropdown-button').addEventListener('keydown', event => {
@@ -2328,6 +2759,24 @@
       const options = [...document.querySelectorAll('#source-menu .source-option')];
       (event.key === 'ArrowUp' ? options.at(-1) : options[0])?.focus();
     }
+  });
+
+  document.querySelectorAll('.download-button').forEach(button => {
+    button.addEventListener('keydown', event => {
+      if (['ArrowDown', 'ArrowUp'].includes(event.key)) {
+        event.preventDefault();
+        toggleDownloadMenu(button, true);
+        const options = [...button.closest('.download-dropdown').querySelectorAll('.download-option')];
+        (event.key === 'ArrowUp' ? options.at(-1) : options[0])?.focus();
+      }
+    });
+  });
+
+  document.querySelector('.sort-help')?.addEventListener('mouseleave', event => {
+    event.currentTarget.classList.remove('dismissed');
+  });
+  document.querySelectorAll('.info-tip').forEach(tip => {
+    tip.addEventListener('mouseleave', () => tip.classList.remove('dismissed'));
   });
 
   document.getElementById('urgent-card').addEventListener('click', () => { if (urgentConvId !== null) openOverlay(urgentConvId); });

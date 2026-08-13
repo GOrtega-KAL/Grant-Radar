@@ -827,6 +827,14 @@
     text-align: right;
   }
   .score-block { display: flex; flex-direction: column; align-items: flex-end; }
+  .score-line { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+  .card-external-link {
+    display: inline-grid; place-items: center; flex: 0 0 auto;
+    width: 27px; height: 27px; border: 1px solid rgba(21, 86, 168, .18);
+    border-radius: 8px; background: var(--brand-soft-2); color: var(--brand);
+    cursor: pointer; transition: .15s ease;
+  }
+  .card-external-link:hover { background: var(--brand-soft); border-color: rgba(21, 86, 168, .38); }
   .score-value { color: var(--brand); font-size: 25px; line-height: 1; font-weight: 850; letter-spacing: -1px; }
   .score-label { margin-top: 3px; color: var(--text-3); font-size: 9px; text-transform: uppercase; letter-spacing: .65px; font-weight: 800; }
   .deadline-value { color: var(--text-2); font-size: 12px; font-weight: 780; }
@@ -2410,7 +2418,7 @@
       const title = escapeHtml(c.title);
 
       return `
-        <article class="conv-item ${priorityClass}${c.descartada ? ' descartada' : ''}" tabindex="0" role="button" aria-label="Abrir detalle de ${title}" onclick="openOverlay(${Number(c.id)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openOverlay(${Number(c.id)})}">
+        <article class="conv-item ${priorityClass}${c.descartada ? ' descartada' : ''}" tabindex="0" role="button" aria-label="Abrir detalle de ${title}" onclick="openOverlay(${Number(c.id)})" onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();openOverlay(${Number(c.id)})}">
           <div class="conv-main">
             <div class="conv-eyebrow">
               <span class="conv-source">${escapeHtml(c.source)}</span>
@@ -2430,7 +2438,15 @@
             </div>
           </div>
           <div class="conv-side">
-            <div class="score-block"><span class="score-value">${c.match}%</span><span class="score-label">Encaje</span></div>
+            <div class="score-block">
+              <div class="score-line">
+                <button class="card-external-link" type="button" aria-label="Abrir convocatoria oficial: ${title}" title="Abrir convocatoria" onclick="event.stopPropagation();openConvUrl(${Number(c.id)})">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M13 5h6v6M19 5l-9 9M10 7H5v12h12v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <span class="score-value">${c.match}%</span>
+              </div>
+              <span class="score-label">Encaje</span>
+            </div>
             <div style="width:100%">
               <div class="deadline-value ${deadlineCls}">${deadlineText(c.deadline)}</div>
               <div class="deadline-date">${deadlineDate || (c.fecha_prevista ? 'fecha prevista' : c.fecha_sin_confirmar ? 'sin confirmar' : 'cierre pendiente')}</div>

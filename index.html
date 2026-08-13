@@ -512,6 +512,7 @@
   .source-option:hover, .source-option:focus-visible { background: var(--brand-soft-2); color: var(--brand); }
   .source-option.active { background: var(--brand); color: #fff; }
   .source-count { opacity: .75; font-family: var(--font-mono); }
+  .source-option.active .source-count { color: #fff; opacity: 1; }
 
   .download-dropdown { position: relative; flex: 0 0 auto; }
   .download-button { white-space: nowrap; }
@@ -523,7 +524,7 @@
   }
   .download-menu.open { display: grid; gap: 3px; }
   .download-option {
-    display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 8px;
+    display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 10px;
     width: 100%; padding: 8px 9px; border: 0; border-radius: 8px;
     background: transparent; color: var(--text-2); text-align: left; cursor: pointer;
   }
@@ -1701,6 +1702,16 @@
     return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es').replace(/\s+/g, ' ').trim();
   }
 
+  function sourceKey(value) {
+    return foldForSearch(value).replace(/[^a-z0-9]+/g, '');
+  }
+
+  function convHasSource(conv, selectedSource) {
+    const selectedKey = sourceKey(selectedSource);
+    return [conv.source, ...(conv.discovery_sources || [])]
+      .some(source => sourceKey(source) === selectedKey);
+  }
+
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -1821,16 +1832,23 @@
   }
 
   function buildSourceMenu() {
+    const labels = new Map();
+    (sources || []).forEach(source => labels.set(sourceKey(source.name), source.name));
     const counts = new Map();
     convocatorias.forEach(c => {
       new Set([c.source, ...(c.discovery_sources || [])].filter(Boolean)).forEach(source => {
-        counts.set(source, (counts.get(source) || 0) + 1);
+        const key = sourceKey(source);
+        if (!labels.has(key)) labels.set(key, source);
+        counts.set(key, (counts.get(key) || 0) + 1);
       });
     });
     (sources || []).forEach(source => {
-      if (!counts.has(source.name)) counts.set(source.name, Number(source.count || 0));
+      const key = sourceKey(source.name);
+      if (!counts.has(key)) counts.set(key, 0);
     });
-    const options = [['all', 'Todas', convocatorias.length], ...[...counts.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es')).map(([name, count]) => [name, name, count])];
+    const options = [['all', 'Todas', convocatorias.length], ...[...counts.entries()]
+      .map(([key, count]) => [labels.get(key), labels.get(key), count])
+      .sort((a, b) => a[1].localeCompare(b[1], 'es'))];
     document.getElementById('source-menu').innerHTML = options.map(([value, label, count]) => `
       <button class="source-option ${filterState.source === value ? 'active' : ''}" type="button" role="option"
               aria-selected="${filterState.source === value}" data-value="${escapeHtml(value)}"
@@ -1966,11 +1984,7 @@
       if ((c.deadline ?? 1) <= 0) return false;
       if (c.descartada && !filterState.showDiscarded) return false;
       if (filterState.onlyReview && !c.review_required) return false;
-      if (
-        filterState.source !== 'all'
-        && c.source !== filterState.source
-        && !(c.discovery_sources || []).includes(filterState.source)
-      ) return false;
+      if (filterState.source !== 'all' && !convHasSource(c, filterState.source)) return false;
       if (filterState.tag !== 'all' && !(c.tags || []).includes(filterState.tag)) return false;
       if (filterState.query && !foldForSearch(c.title).includes(filterState.query)) return false;
       return true;

@@ -956,7 +956,10 @@
   .source-name { color: var(--text); font-size: 11px; font-weight: 720; }
   .source-type { margin-top: 2px; color: var(--text-3); font-size: 9.3px; font-family: var(--font-mono); }
   .source-right { text-align: right; }
-  .source-count { color: var(--brand); font-size: 14px; font-weight: 820; }
+  .source-volume { display: flex; align-items: baseline; justify-content: flex-end; gap: 5px; white-space: nowrap; }
+  .source-raw-count, .source-consolidated-count { color: var(--brand); font-size: 13px; font-weight: 820; }
+  .source-volume-arrow { color: var(--text-3); font-size: 10px; }
+  .source-volume-label { margin-top: 2px; color: var(--text-3); font-size: 8.2px; white-space: nowrap; }
   .source-time { margin-top: 2px; color: var(--text-3); font-size: 9px; font-family: var(--font-mono); }
 
   .chart-wrap { padding: 14px 14px 11px; }
@@ -1387,10 +1390,10 @@
         </div>
         <div class="mini-metric">
           <div class="mini-metric-head">
-            <div class="mini-metric-label">Marcadas</div>
+            <div class="mini-metric-label">Datos pendientes</div>
             <span class="info-tip">
               <button class="info-tip-button" type="button" aria-label="Qué significa marcadas" aria-describedby="metric-help-review" aria-expanded="false" onfocus="toggleInfoTooltip(this, true)" onblur="toggleInfoTooltip(this, false)" onclick="toggleInfoTooltip(this, true)">?</button>
-              <span class="info-tooltip" id="metric-help-review" role="tooltip">Convocatorias abiertas que siguen siendo relevantes, pero requieren confirmar algún dato como elegibilidad, presupuesto, consorcio o plazo.</span>
+              <span class="info-tooltip" id="metric-help-review" role="tooltip">Convocatorias relevantes con hechos todavía no localizados, como elegibilidad, presupuesto o consorcio. No implica que su compatibilidad requiera evaluación manual.</span>
             </span>
           </div>
           <div class="mini-metric-value" id="cnt-review">0</div>
@@ -1446,7 +1449,7 @@
           <label class="toggle-control">
             <input type="checkbox" id="toggle-review-mobile" onchange="syncToggle('review', this.checked)">
             <span class="toggle-track"><span class="toggle-thumb"></span></span>
-            Solo marcadas
+            Solo datos pendientes
           </label>
           <div class="download-dropdown">
             <button class="ghost-btn download-button" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleDownloadMenu(this)">
@@ -1486,7 +1489,7 @@
       <label class="toggle-control">
         <input type="checkbox" id="toggle-review" onchange="syncToggle('review', this.checked)">
         <span class="toggle-track"><span class="toggle-thumb"></span></span>
-        Solo marcadas
+        Solo datos pendientes
       </label>
       <div class="download-dropdown">
         <button class="ghost-btn download-button" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleDownloadMenu(this)">
@@ -1532,7 +1535,7 @@
 
       <section class="panel">
         <div class="panel-header">
-          <div class="panel-heading-group"><h2 class="panel-title">Casos marcados</h2><div class="panel-subtitle">Comprobaciones sugeridas</div></div>
+          <div class="panel-heading-group"><h2 class="panel-title">Cobertura documental</h2><div class="panel-subtitle">Datos que el pipeline aún no ha localizado</div></div>
           <span class="panel-tag" id="review-count-tag">0</span>
         </div>
         <div class="review-list" id="review-list"></div>
@@ -1558,7 +1561,7 @@
         <div class="keyword-list" id="kw-list"></div>
       </section>
       <section class="panel">
-        <div class="panel-header"><h2 class="panel-title">Fuentes monitorizadas</h2><span class="panel-tag">Estado</span></div>
+        <div class="panel-header"><div><h2 class="panel-title">Fuentes monitorizadas</h2><div class="panel-subtitle">Registros recuperados → convocatorias consolidadas</div></div><span class="panel-tag">Estado</span></div>
         <div class="source-list" id="source-list"></div>
       </section>
       <section class="panel">
@@ -1712,6 +1715,12 @@
       .some(source => sourceKey(source) === selectedKey);
   }
 
+  function consolidatedSourceCount(source) {
+    const published = Number(source?.consolidated_count);
+    if (source?.consolidated_count != null && Number.isFinite(published)) return published;
+    return convocatorias.filter(conv => convHasSource(conv, source?.name || '')).length;
+  }
+
   function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -1742,6 +1751,12 @@
           { name: 'Oportunidad estratégica', val: raw.scores.strategic ?? 0 }
         ]
       : (Array.isArray(raw.dims) ? raw.dims : (Array.isArray(raw.dimensiones) ? raw.dimensiones : []));
+    const legacyGapReasons = Array.isArray(raw.review_reasons)
+      ? raw.review_reasons.filter(reason => ['eligibility_unknown', 'budget_missing', 'consortium_requirement_missing', 'analysis_pending'].includes(reason))
+      : [];
+    const compatibilityReasons = Array.isArray(raw.review_reasons)
+      ? raw.review_reasons.filter(reason => reason === 'rule_model_discrepancy')
+      : [];
 
     return {
       ...raw,
@@ -1761,8 +1776,16 @@
       risks_and_unknowns: Array.isArray(raw.risks_and_unknowns) ? raw.risks_and_unknowns : [],
       partner_needs: Array.isArray(raw.partner_needs) ? raw.partner_needs : [],
       recommended_partners: Array.isArray(raw.recommended_partners) ? raw.recommended_partners : [],
-      review_required: Boolean(raw.review_required),
-      review_reasons: Array.isArray(raw.review_reasons) ? raw.review_reasons : [],
+      review_required: raw.data_gaps == null
+        ? compatibilityReasons.length > 0 : Boolean(raw.review_required),
+      review_reasons: raw.data_gaps == null ? compatibilityReasons : (Array.isArray(raw.review_reasons) ? raw.review_reasons : []),
+      data_gaps: Array.isArray(raw.data_gaps)
+        ? raw.data_gaps
+        : legacyGapReasons,
+      data_pending: raw.data_pending == null
+        ? legacyGapReasons.length > 0
+        : Boolean(raw.data_pending),
+      monitoring_flags: Array.isArray(raw.monitoring_flags) ? raw.monitoring_flags : [],
       token_usage: raw.token_usage && typeof raw.token_usage === 'object' ? raw.token_usage : {},
       call_facts: raw.call_facts && typeof raw.call_facts === 'object' ? raw.call_facts : {},
       tech_tags: Array.isArray(raw.tech_tags) ? raw.tech_tags : [],
@@ -1983,7 +2006,7 @@
     let list = convocatorias.filter(c => {
       if ((c.deadline ?? 1) <= 0) return false;
       if (c.descartada && !filterState.showDiscarded) return false;
-      if (filterState.onlyReview && !c.review_required) return false;
+      if (filterState.onlyReview && !c.data_pending && !c.review_required) return false;
       if (filterState.source !== 'all' && !convHasSource(c, filterState.source)) return false;
       if (filterState.tag !== 'all' && !(c.tags || []).includes(filterState.tag)) return false;
       if (filterState.query && !foldForSearch(c.title).includes(filterState.query)) return false;
@@ -2018,7 +2041,8 @@
       'Coste mínimo de proyecto EUR', 'Ayuda máxima EUR', 'Financiación %', 'TRL mínimo', 'TRL máximo',
       'Consorcio obligatorio', 'Geografías elegibles', 'Tipos de solicitante', 'Temas requeridos', 'Temáticas',
       'Taxonomía tecnológica', 'Resumen', 'Siguiente acción', 'Evidencias positivas', 'Riesgos e incógnitas',
-      'Requiere comprobación', 'Motivos de comprobación', 'Socios recomendados', 'Necesidades de socio',
+      'Datos pendientes', 'Datos no localizados', 'Contradicción reglas-modelo',
+      'Motivos de contradicción', 'Alertas de seguimiento', 'Socios recomendados', 'Necesidades de socio',
       'Calidad de evidencia', 'Descartada', 'URL oficial'
     ];
     const listText = values => (Array.isArray(values) ? values : [])
@@ -2061,8 +2085,11 @@
       listText(facts.applicant_types?.length ? facts.applicant_types : facts.eligible_entity_types),
       listText(facts.required_topics), listText((c.tags || []).map(tag => tagMap[tag] || tag)),
       listText((c.tech_tags || []).map(tag => techTagMap[tag] || tag)), c.summary || '', c.action || '',
-      listText(c.positive_evidence), listText(c.risks_and_unknowns), yesNo(c.review_required),
+      listText(c.positive_evidence), listText(c.risks_and_unknowns), yesNo(c.data_pending),
+      listText((c.data_gaps || []).map(reason => reviewReasonMap[reason] || reason)),
+      yesNo(c.review_required),
       listText((c.review_reasons || []).map(reason => reviewReasonMap[reason] || reason)),
+      listText((c.monitoring_flags || []).map(reason => reviewReasonMap[reason] || reason)),
       listText(c.recommended_partners) || c.socio_consorcio || '', listText(c.partner_needs),
       c.evidence_quality || '', yesNo(c.descartada), c.url || ''
       ];
@@ -2282,6 +2309,9 @@
       };
       sources = (data.sources || []).map(source => ({
         ...source,
+        raw_count: Number(source.raw_count ?? source.count ?? 0),
+        consolidated_count: source.consolidated_count == null
+          ? null : Number(source.consolidated_count),
         time: dashboardMeta.generated_at
           ? `act. ${new Date(dashboardMeta.generated_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
           : 'sin hora'
@@ -2333,11 +2363,11 @@
       { name: 'hidrógeno', count: 6, color: 'var(--teal)' }
     ];
     sources = [
-      { name: 'HORIZON EUROPE', type: 'API REST', status: 'ok', count: 12, time: 'demo' },
-      { name: 'CDTI', type: 'Catálogo / scraping', status: 'ok', count: 8, time: 'demo' },
-      { name: 'IDAE', type: 'Web scraping', status: 'ok', count: 6, time: 'demo' },
-      { name: 'BOE / MITECO', type: 'API BOE', status: 'warn', count: 2, time: 'demo' },
-      { name: 'BOA Aragón', type: 'Catálogo curado', status: 'ok', count: 5, time: 'demo' }
+      { name: 'HORIZON EUROPE', type: 'API REST', status: 'ok', count: 12, raw_count: 12, time: 'demo' },
+      { name: 'CDTI', type: 'Catálogo / scraping', status: 'ok', count: 8, raw_count: 8, time: 'demo' },
+      { name: 'IDAE', type: 'Web scraping', status: 'ok', count: 6, raw_count: 6, time: 'demo' },
+      { name: 'BOE / MITECO', type: 'API BOE', status: 'warn', count: 2, raw_count: 2, time: 'demo' },
+      { name: 'BOA Aragón', type: 'Catálogo curado', status: 'ok', count: 5, raw_count: 5, time: 'demo' }
     ];
     dashboardMeta = { schema_version: 2, versions: { analysis: 'demo-2.0', pipeline: 'vigtech-2.3' }, stats: {}, claude_usage: { current_run: { total_tokens: 14250, estimated_cost_usd: 0.032 } }, generated_at: null };
   }
@@ -2361,6 +2391,7 @@
     const active = nonClosed.filter(c => !c.descartada);
     const high = active.filter(c => c.priority === 'high');
     const discarded = nonClosed.filter(c => c.descartada);
+    const dataPending = active.filter(c => c.data_pending);
     const review = active.filter(c => c.review_required);
     const urgent = [...active]
       .filter(c => Number.isFinite(c.deadline))
@@ -2369,7 +2400,7 @@
     animateNumber('cnt-active', active.length, 600);
     animateNumber('cnt-high', high.length, 600);
     animateNumber('cnt-discarded', discarded.length, 600);
-    animateNumber('cnt-review', review.length, 600);
+    animateNumber('cnt-review', dataPending.length, 600);
 
     const highPercentage = active.length ? Math.round(high.length / active.length * 100) : 0;
     document.getElementById('high-caption').textContent = high.length
@@ -2388,7 +2419,7 @@
     document.getElementById('executive-summary').innerHTML = `
       <p><strong>${high.length} oportunidades</strong> presentan encaje alto y <strong>${urgentCount}</strong> cierran en menos de 30 días.</p>
       ${top ? `<p>La primera por accionabilidad es <strong>${escapeHtml(top.title)}</strong> (${top.actionability_score}%).</p>` : ''}
-      <p>${review.length ? `${review.length} casos incluyen una marca de comprobación.` : 'No hay casos marcados para comprobación.'}</p>`;
+      <p>${dataPending.length ? `${dataPending.length} convocatorias tienen datos documentales pendientes; ${review.length} presentan contradicciones de compatibilidad.` : `No quedan datos documentales pendientes; ${review.length} casos presentan contradicciones de compatibilidad.`}</p>`;
   }
 
   function animateNumber(id, target, duration) {
@@ -2405,7 +2436,7 @@
 
   function renderConvs() {
     const list = getFiltered();
-    const base = convocatorias.filter(c => (c.deadline ?? 1) > 0 && (filterState.showDiscarded || !c.descartada) && (!filterState.onlyReview || c.review_required));
+    const base = convocatorias.filter(c => (c.deadline ?? 1) > 0 && (filterState.showDiscarded || !c.descartada) && (!filterState.onlyReview || c.data_pending || c.review_required));
     document.getElementById('filter-count-tag').textContent = list.length === base.length ? `${list.length} resultados` : `${list.length} de ${base.length}`;
 
     const element = document.getElementById('conv-list');
@@ -2420,7 +2451,9 @@
       const confidenceText = c.confidence == null ? 'N/D' : `${c.confidence}%`;
       const eligibilityText = eligibilityMap[c.eligibility] || c.eligibility;
       const decisionText = decisionMap[c.decision] || c.decision;
-      const reviewLabel = c.review_required ? '<span class="status-label review">Comprobar</span>' : '';
+      const reviewLabel = c.review_required
+        ? '<span class="status-label review">Contradicción</span>'
+        : c.data_pending ? '<span class="status-label review">Datos pendientes</span>' : '';
       const discardLabel = c.descartada ? '<span class="status-label discard">Descartada</span>' : '';
       const opportunityLabels = (c.opportunity_labels || []).map(label => {
         const normalized = foldForSearch(label);
@@ -2493,17 +2526,17 @@
   function renderReviewQueue() {
     const element = document.getElementById('review-list');
     const items = convocatorias
-      .filter(c => c.review_required && (c.deadline ?? 1) > 0)
+      .filter(c => c.data_pending && !c.descartada && (c.deadline ?? 1) > 0)
       .sort((a, b) => (a.deadline ?? Infinity) - (b.deadline ?? Infinity));
     document.getElementById('review-count-tag').textContent = String(items.length);
     if (!items.length) {
-      element.innerHTML = '<div class="no-results" style="padding:18px">Sin casos marcados.</div>';
+      element.innerHTML = '<div class="no-results" style="padding:18px">Sin datos documentales pendientes.</div>';
       return;
     }
     element.innerHTML = items.slice(0, 5).map(c => `
       <div class="review-item" role="button" tabindex="0" onclick="openOverlay(${Number(c.id)})" onkeydown="if(event.key==='Enter'){openOverlay(${Number(c.id)})}">
         <div class="review-title">${escapeHtml(c.title)}</div>
-        <div class="review-reasons">${escapeHtml((c.review_reasons || []).map(reason => reviewReasonMap[reason] || reason).join(' · ') || 'Comprobación recomendada')}</div>
+        <div class="review-reasons">${escapeHtml((c.data_gaps || []).map(reason => reviewReasonMap[reason] || reason).join(' · ') || 'Evidencia pendiente')}</div>
       </div>`).join('');
   }
 
@@ -2541,8 +2574,12 @@
       element.innerHTML = '<div class="no-results" style="padding:20px">Sin datos de fuentes.</div>';
       return;
     }
-    element.innerHTML = sources.map(source => `
-      <div class="source-item"><div class="source-left"><span class="source-status ${escapeHtml(source.status || 'warn')}"></span><div><div class="source-name">${escapeHtml(source.name)}</div><div class="source-type">${escapeHtml(source.type || 'fuente')} ${source.count_cerradas ? `· ${source.count_cerradas} cerradas` : ''}</div></div></div><div class="source-right"><div class="source-count">${Number(source.count || 0)}</div><div class="source-time">${escapeHtml(source.time || '')}</div></div></div>`).join('');
+    element.innerHTML = sources.map(source => {
+      const rawCount = Number(source.raw_count ?? source.count ?? 0);
+      const consolidatedCount = consolidatedSourceCount(source);
+      return `
+      <div class="source-item"><div class="source-left"><span class="source-status ${escapeHtml(source.status || 'warn')}"></span><div><div class="source-name">${escapeHtml(source.name)}</div><div class="source-type">${escapeHtml(source.type || 'fuente')} ${source.count_cerradas ? `· ${source.count_cerradas} cerradas` : ''}</div></div></div><div class="source-right"><div class="source-volume" aria-label="${rawCount} registros recuperados, ${consolidatedCount} convocatorias consolidadas"><span class="source-raw-count">${rawCount}</span><span class="source-volume-arrow" aria-hidden="true">→</span><span class="source-consolidated-count">${consolidatedCount}</span></div><div class="source-volume-label">registros → convocatorias</div><div class="source-time">${escapeHtml(source.time || '')}</div></div></div>`;
+    }).join('');
   }
 
   function renderChart() {
@@ -2623,9 +2660,10 @@
 
     const reviewBlock = document.getElementById('ov-review-block');
     const reviewLabels = (c.review_reasons || []).map(reason => reviewReasonMap[reason] || reason);
-    if (c.review_required || c.eligibility_reason) {
+    const dataGapLabels = (c.data_gaps || []).map(reason => reviewReasonMap[reason] || reason);
+    if (c.review_required || c.data_pending || c.eligibility_reason) {
       reviewBlock.style.display = 'block';
-      reviewBlock.innerHTML = `${c.review_required ? `<strong>Comprobación sugerida:</strong> ${escapeHtml(reviewLabels.join(' · ') || 'revisión manual')}` : ''}${c.eligibility_reason ? `<div style="margin-top:4px"><strong>Elegibilidad:</strong> ${escapeHtml(c.eligibility_reason)}</div>` : ''}`;
+      reviewBlock.innerHTML = `${c.review_required ? `<strong>Contradicción entre reglas y modelo:</strong> ${escapeHtml(reviewLabels.join(' · '))}` : ''}${c.data_pending ? `<div style="margin-top:4px"><strong>Datos pendientes:</strong> ${escapeHtml(dataGapLabels.join(' · '))}</div>` : ''}${c.eligibility_reason ? `<div style="margin-top:4px"><strong>Elegibilidad:</strong> ${escapeHtml(c.eligibility_reason)}</div>` : ''}`;
     } else {
       reviewBlock.style.display = 'none';
       reviewBlock.textContent = '';

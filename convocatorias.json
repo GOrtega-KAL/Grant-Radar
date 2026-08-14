@@ -6772,7 +6772,7 @@
       "programme_key": "",
       "programme_name": "",
       "url_generica": true,
-      "url_rota": true
+      "url_rota": false
     },
     {
       "id": 33,
@@ -10003,7 +10003,7 @@
       "fecha_prevista": false,
       "budget": "€6,000",
       "budget_raw": 0,
-      "url": "sede.uco.es",
+      "url": "https://sede.uco.es",
       "org": "OTROS · UNIVERSIDAD DE CÓRDOBA",
       "tags": [],
       "tech_tags": [],
@@ -10045,7 +10045,7 @@
       "programme_key": "",
       "programme_name": "",
       "url_generica": false,
-      "url_rota": true
+      "url_rota": false
     },
     {
       "id": 43,
@@ -10809,7 +10809,7 @@
       "fecha_prevista": false,
       "budget": "€1,705,000",
       "budget_raw": 0,
-      "url": "www.navarra.es",
+      "url": "https://www.navarra.es",
       "org": "AUTONOMICA · COMUNIDAD FORAL DE NAVARRA · DEPARTAMENTO DE DESARROLLO RURAL Y MEDIO AMBIENTE",
       "tags": [],
       "tech_tags": [],
@@ -10851,7 +10851,7 @@
       "programme_key": "",
       "programme_name": "",
       "url_generica": false,
-      "url_rota": true
+      "url_rota": false
     },
     {
       "id": 48,
